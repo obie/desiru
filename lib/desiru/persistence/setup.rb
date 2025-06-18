@@ -16,6 +16,9 @@ module Desiru
         # Always reinitialize if the database connection has changed
         return if @initialized && Sequel::Model.db == db_connection
 
+        # Ensure we have a valid connection
+        raise 'Database connection required' unless db_connection
+
         # Create the base model with a specific database
         Sequel::Model.db = db_connection
 

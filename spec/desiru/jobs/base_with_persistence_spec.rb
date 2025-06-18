@@ -5,6 +5,11 @@ require 'support/database_helper'
 require 'desiru/persistence/setup'
 
 RSpec.describe Desiru::Jobs::Base, :persistence do
+  # Force a new database connection for this test file
+  before(:all) do
+    DatabaseHelper.setup_connection(force_new: true)
+  end
+
   # Test job class that uses the base functionality
   class TestPersistenceJob < described_class
     def perform(job_id, inputs)
@@ -46,7 +51,7 @@ RSpec.describe Desiru::Jobs::Base, :persistence do
 
   before do
     redis.flushdb
-    Desiru::Persistence::Models::JobResult.dataset.delete
+    # DatabaseHelper handles database cleanup for :persistence tagged tests
   end
 
   describe 'with persistence enabled' do

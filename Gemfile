@@ -8,8 +8,6 @@ ruby '~> 3.4.2'
 gemspec
 
 group :development, :test do
-  gem 'minitest', '~> 5.0'
-  gem 'minitest-reporters', '~> 1.6'
   gem 'pry', '~> 0.14'
   gem 'pry-byebug', '~> 3.10'
   gem 'rack-test', '~> 2.0'

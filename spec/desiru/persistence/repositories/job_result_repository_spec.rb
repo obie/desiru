@@ -4,13 +4,14 @@ require 'spec_helper'
 require 'support/database_helper'
 
 RSpec.describe Desiru::Persistence::Repositories::JobResultRepository, :persistence do
+  # Force a new database connection for this test file
+  before(:all) do
+    DatabaseHelper.setup_connection(force_new: true)
+  end
 
   let(:repository) { described_class.new }
 
-  before do
-    # Clean up any existing job results
-    Desiru::Persistence::Models::JobResult.dataset.delete
-  end
+  # DatabaseHelper handles cleanup automatically for :persistence tagged tests
 
   describe '#create_for_job' do
     it 'creates a new job result with pending status' do

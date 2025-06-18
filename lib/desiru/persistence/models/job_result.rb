@@ -4,10 +4,7 @@ module Desiru
   module Persistence
     module Models
       # Model for storing background job results
-      class JobResult < Sequel::Model(:job_results)
-        plugin :timestamps, update_on_create: true
-        plugin :json_serializer
-        plugin :validation_helpers
+      class JobResult < Base
 
         # Status constants
         STATUS_PENDING = 'pending'
@@ -19,7 +16,7 @@ module Desiru
         def validate
           super
           validates_presence %i[job_id job_class queue status enqueued_at]
-          validates_unique :job_id
+          validates_unique :job_id if db.table_exists?(:job_results)
           validates_includes %w[pending processing completed failed], :status
         end
 

@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'sequel'
 require 'desiru/persistence'
 require 'desiru/persistence/setup'
 
@@ -25,9 +26,25 @@ module DatabaseHelper
           # Reset Setup if loaded - this is critical for forcing reinitialization
           Desiru::Persistence::Setup.instance_variable_set(:@initialized, false) if defined?(Desiru::Persistence::Setup)
 
+          # Reset Models::Base to nil to force reinitialization
+          if defined?(Desiru::Persistence::Models)
+            Desiru::Persistence::Models.send(:remove_const, :Base) if Desiru::Persistence::Models.const_defined?(:Base)
+            Desiru::Persistence::Models.const_set(:Base, nil)
+          end
+
           # Connect to in-memory database - each gets its own instance
           Desiru::Persistence::Database.connect('sqlite::memory:')
+          
+          # Ensure Sequel::Model has the correct database
+          Sequel::Model.db = Desiru::Persistence::Database.connection
+          
           Desiru::Persistence::Database.migrate!
+          
+          # Debug: Check tables after migration
+          if ENV['DEBUG_DB']
+            tables = Desiru::Persistence::Database.connection.tables
+            puts "DEBUG: After migrate!, tables are: #{tables.inspect}"
+          end
 
           # Setup repositories after migration
           Desiru::Persistence::Repository.setup!
