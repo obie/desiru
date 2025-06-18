@@ -91,6 +91,17 @@ result = executor.execute(graphql_query)
 - Reduced method complexity from ABC size 43.69 to under 25
 - Improved code readability and maintainability
 
+### Architectural Improvements
+- **Extracted TypeBuilder Module**: Moved GraphQL type generation logic into a separate module
+  - Reduced SchemaGenerator class length by ~140 lines
+  - Better separation of concerns
+  - Improved testability and reusability
+- **Fixed Linting Issues**:
+  - Converted class variables to class instance variables in SchemaGenerator
+  - Fixed predicate method naming (`has_pending_loads?` → `pending_loads?`)
+  - Eliminated duplicate branch conditions in type resolution
+- **Maintained Performance**: All optimizations preserved with 83.9% improvement for duplicate requests
+
 ### VCR Integration for Testing
 Added comprehensive VCR support for GraphQL testing:
 - **GraphQLVCRHelper** module for easy VCR configuration

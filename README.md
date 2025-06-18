@@ -190,6 +190,52 @@ model = Desiru::Models::Ollama.new(
 cot = Desiru::ChainOfThought.new("question -> answer", model: model)
 ```
 
+### Assertions and Validation
+
+Desiru provides an assertions system for validating module outputs and enforcing constraints:
+
+```ruby
+# Configure assertions
+Desiru::Assertions.configure do |config|
+  config.max_assertion_retries = 3    # Retry failed assertions up to 3 times
+  config.assertion_retry_delay = 0.5  # Wait 0.5s between retries
+end
+
+# Use assertions in your modules
+class FactChecker < Desiru::Module
+  def forward(statement:)
+    result = @model.complete(prompt: "Verify: #{statement}")
+    confidence = extract_confidence(result)
+    
+    # Hard assertion - will retry if confidence is too low
+    Desiru.assert(confidence > 0.8, "Confidence too low: #{confidence}")
+    
+    { statement: statement, confidence: confidence, verified: true }
+  end
+end
+
+# Use suggestions for soft constraints
+class CodeReviewer < Desiru::Module
+  def forward(code:)
+    review = analyze_code(code)
+    
+    # Soft suggestion - logs warning but continues
+    Desiru.suggest(review[:test_coverage] > 0.7, "Test coverage below 70%")
+    Desiru.suggest(review[:complexity] < 10, "Code complexity too high")
+    
+    review
+  end
+end
+```
+
+Key features:
+- **Assertions** (`Desiru.assert`) - Enforce hard constraints with automatic retries
+- **Suggestions** (`Desiru.suggest`) - Log warnings for soft constraints
+- **Configurable retries** - Control retry behavior for failed assertions
+- **Module integration** - Assertions are fully integrated with the module retry system
+
+See `examples/assertions_example.rb` for more detailed examples.
+
 ### REST API with Grape
 
 Desiru provides Grape integration for building REST APIs:

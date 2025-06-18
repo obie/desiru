@@ -88,7 +88,7 @@ end
 puts "\n7. Dataset management:"
 splits = training_examples.split_dataset('TextSummarizer')
 puts "- Training set: #{splits[:training].length} examples"
-puts "- Validation set: #{splits[:validation].length} examples" 
+puts "- Validation set: #{splits[:validation].length} examples"
 puts "- Test set: #{splits[:test].length} examples"
 
 # Export for training

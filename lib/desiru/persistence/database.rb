@@ -36,7 +36,7 @@ module Desiru
           Sequel.extension :migration
           migrations_path = File.expand_path('../../../db/migrations', __dir__)
           Sequel::Migrator.run(@connection, migrations_path)
-          
+
           # Initialize persistence layer after migrations
           require_relative 'setup'
           Setup.initialize!(@connection)

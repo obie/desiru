@@ -23,6 +23,7 @@ GEM
       securerandom (>= 0.3)
       tzinfo (~> 2.0, >= 2.0.5)
       uri (>= 0.13.1)
+    ansi (1.5.0)
     ast (2.4.3)
     async (2.25.0)
       console (~> 1.29)
@@ -33,6 +34,7 @@ GEM
     base64 (0.3.0)
     benchmark (0.4.1)
     bigdecimal (3.2.2)
+    builder (3.3.0)
     byebug (12.0.0)
     coderay (1.1.3)
     concurrent-ruby (1.3.5)
@@ -125,6 +127,11 @@ GEM
     metrics (0.12.2)
     mini_portile2 (2.8.9)
     minitest (5.25.5)
+    minitest-reporters (1.7.1)
+      ansi
+      builder
+      minitest (>= 5.0)
+      ruby-progressbar
     multi_json (1.15.0)
     multipart-post (2.4.1)
     mustermann (3.0.3)
@@ -279,6 +286,8 @@ DEPENDENCIES
   grape (~> 2.0)
   graphql (~> 2.0)
   jwt (~> 2.0)
+  minitest (~> 5.0)
+  minitest-reporters (~> 1.6)
   pry (~> 0.14)
   pry-byebug (~> 3.10)
   rack-cors (~> 2.0)

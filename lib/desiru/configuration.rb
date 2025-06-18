@@ -6,7 +6,7 @@ module Desiru
   class Configuration
     attr_accessor :default_model, :cache_enabled, :cache_ttl, :max_retries,
                   :retry_delay, :logger, :module_registry, :model_timeout,
-                  :redis_url
+                  :redis_url, :retry_count
 
     def initialize
       @default_model = nil
@@ -14,6 +14,7 @@ module Desiru
       @cache_ttl = 3600 # 1 hour
       @max_retries = 3
       @retry_delay = 1
+      @retry_count = 3
       @logger = default_logger
       @module_registry = Desiru::Registry.instance
       @model_timeout = 30

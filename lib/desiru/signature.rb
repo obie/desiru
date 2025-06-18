@@ -4,10 +4,46 @@ module Desiru
   # Represents input/output specifications for modules
   # Supports DSL-style signature strings like "question -> answer"
   class Signature
+    # FieldWrapper provides a test-compatible interface for Field objects
+    class FieldWrapper
+      def initialize(field)
+        @field = field
+      end
+
+      def type
+        @field.type
+      end
+
+      def description
+        @field.description
+      end
+
+      def optional
+        @field.optional
+      end
+
+      def optional?
+        @field.optional?
+      end
+
+      def name
+        @field.name
+      end
+
+      def method_missing(method, *, &)
+        @field.send(method, *, &)
+      end
+
+      def respond_to_missing?(method, include_private = false)
+        @field.respond_to?(method, include_private)
+      end
+    end
+
     # FieldHash allows access by both string and symbol keys
     class FieldHash < Hash
       def [](key)
-        super(key.to_sym)
+        field = super(key.to_sym)
+        field ? FieldWrapper.new(field) : nil
       end
 
       def []=(key, value)
@@ -155,23 +191,37 @@ module Desiru
           optional = name.end_with?('?') || type_info.include?('?')
           # Clean field name by removing trailing ?
           name = name.gsub(/\?$/, '')
+
+          # Extract description if present (in quotes at the end)
+          description = nil
+          # Look for description only after the type definition, not within brackets
+          if type_info =~ /^([^"]+?)\s+"([^"]+)"$/
+            type_info = ::Regexp.last_match(1).strip
+            description = ::Regexp.last_match(2)
+          end
+
           # Remove optional marker before parsing type
           clean_type_info = type_info.gsub('?', '').strip
           type_data = parse_type(clean_type_info)
+          # Store the original type string for tests
+          type_data[:original_type] = clean_type_info
         else
           name = field_str
           # Check if field name ends with ?
           optional = name.end_with?('?')
           name = name.gsub(/\?$/, '')
-          type_data = { type: :string }
+          type_data = { type: :string, original_type: 'string' }
+          description = nil
         end
 
-        description = @descriptions[name.to_sym] || @descriptions[name.to_s]
+        # Use extracted description or fallback to descriptions hash
+        description ||= @descriptions[name.to_sym] || @descriptions[name.to_s]
 
         # Create field with parsed type data
         field_args = {
           description: description,
-          optional: optional
+          optional: optional,
+          original_type: type_data[:original_type]
         }
 
         # Add literal values if present
@@ -219,7 +269,7 @@ module Desiru
         if end_index > 0
           literal_content = type_string[8...end_index] # Extract content between 'Literal[' and ']'
           values = parse_literal_values(literal_content)
-          return { type: :literal, literal_values: values }
+          return { type: :literal, literal_values: values, original_type: type_string }
         end
       end
 
@@ -247,22 +297,25 @@ module Desiru
         if end_index > 0
           element_type_str = type_string[(start_index + 1)...end_index]
           element_type_data = parse_type(element_type_str) # Recursive for nested types
-          return { type: :list, element_type: element_type_data }
+          return { type: :list, element_type: element_type_data, original_type: type_string }
         end
       end
 
       # Handle Union types (for future implementation)
       if type_string.start_with?('Union[')
         # Placeholder for union type parsing
-        return { type: :union, union_types: [] } # To be implemented
+        return { type: :union, union_types: [], original_type: type_string } # To be implemented
       end
 
       # Handle basic types
       # First check if it's a list/array with simple element type (e.g., list[str])
       if type_string.downcase.start_with?('list[', 'array[')
         # Even if we couldn't parse the brackets properly above, it's still a list
-        return { type: :list }
+        return { type: :list, original_type: type_string }
       end
+
+      # Handle dict/dictionary types with special parsing
+      return { type: :hash, original_type: type_string } if type_string.downcase.start_with?('dict[', 'dictionary[')
 
       clean_type = type_string.gsub(/[?\[\]]/, '').downcase
       type_sym = case clean_type
@@ -275,7 +328,7 @@ module Desiru
                  else clean_type.to_sym
                  end
 
-      { type: type_sym }
+      { type: type_sym, original_type: type_string }
     end
 
     def parse_literal_values(literal_content)
@@ -289,16 +342,23 @@ module Desiru
         if !in_quotes && ['"', "'"].include?(char)
           in_quotes = true
           quote_char = char
+          current_value << char # Include the quote in the value
         elsif in_quotes && char == quote_char
           # Check if it's escaped
           if index > 0 && literal_content[index - 1] != '\\'
             in_quotes = false
+            current_value << char # Include the closing quote
             quote_char = nil
           else
             current_value << char
           end
         elsif !in_quotes && char == ','
-          values << current_value.strip.gsub(/^['"]|['"]$/, '')
+          val = current_value.strip
+          # Remove outer quotes if present
+          if (val.start_with?('"') && val.end_with?('"')) || (val.start_with?("'") && val.end_with?("'"))
+            val = val[1...-1]
+          end
+          values << val
           current_value = String.new
         else
           current_value << char
@@ -306,7 +366,14 @@ module Desiru
       end
 
       # Add the last value
-      values << current_value.strip.gsub(/^['"]|['"]$/, '') unless current_value.empty?
+      unless current_value.empty?
+        val = current_value.strip
+        # Remove outer quotes if present
+        if (val.start_with?('"') && val.end_with?('"')) || (val.start_with?("'") && val.end_with?("'"))
+          val = val[1...-1]
+        end
+        values << val
+      end
 
       values
     end

@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-
 module Desiru
   module Persistence
     module Models
@@ -14,8 +13,13 @@ module Desiru
 
         def validate
           super
-          validates_presence %i[method path status_code]
-          validates_includes %w[GET POST PUT PATCH DELETE], :method
+          # Validate method column separately due to name conflict with Ruby's method method
+          if self[:method].nil? || self[:method].to_s.empty?
+            errors.add(:method, 'is required')
+          elsif !%w[GET POST PUT PATCH DELETE].include?(self[:method])
+            errors.add(:method, 'must be GET, POST, PUT, PATCH, or DELETE')
+          end
+          validates_presence %i[path status_code]
         end
 
         def success?

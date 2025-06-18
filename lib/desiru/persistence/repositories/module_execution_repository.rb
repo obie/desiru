@@ -32,13 +32,13 @@ module Desiru
           scope = scope.where(status: 'completed')
                        .exclude(finished_at: nil)
 
-          durations = scope.select_map do |record|
-            record.finished_at - record.started_at
-          end
+          records = scope.all
+          return nil if records.empty?
 
+          durations = records.map(&:duration).compact
           return nil if durations.empty?
 
-          durations.sum / durations.length
+          durations.sum.to_f / durations.length
         end
 
         def success_rate(module_name = nil)

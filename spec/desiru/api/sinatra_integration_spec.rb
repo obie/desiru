@@ -75,6 +75,8 @@ RSpec.describe Desiru::API::SinatraIntegration do
         end
 
         it 'validates required parameters' do
+          allow(simple_module).to receive(:call).and_raise(Desiru::ModuleError, 'Missing required parameter: input')
+
           post '/api/v1/test', {}.to_json, { 'CONTENT_TYPE' => 'application/json' }
 
           expect(last_response.status).to eq(400)
@@ -83,6 +85,8 @@ RSpec.describe Desiru::API::SinatraIntegration do
         end
 
         it 'validates parameter types' do
+          allow(simple_module).to receive(:call).and_raise(Desiru::ModuleError, 'Invalid type for input')
+
           post '/api/v1/test', { input: 123 }.to_json, { 'CONTENT_TYPE' => 'application/json' }
 
           expect(last_response.status).to eq(400)
@@ -101,9 +105,9 @@ RSpec.describe Desiru::API::SinatraIntegration do
           integration.register_module('/complex', complex_module)
 
           expected_input = {
-            'name' => 'John',
-            'age' => 30,
-            'active' => true
+            name: 'John',
+            age: 30,
+            active: true
           }
 
           allow(complex_module).to receive(:call).with(expected_input).and_return({

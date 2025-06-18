@@ -86,12 +86,12 @@ module Desiru
         @data_loader.perform_loads
 
         # Then perform any additional pending loads
-        @data_loader.perform_loads while has_pending_loads?
+        @data_loader.perform_loads while pending_loads?
 
         result
       end
 
-      def has_pending_loads?
+      def pending_loads?
         pending_loads = @data_loader.instance_variable_get(:@pending_loads)
         pending_loads&.any? { |_, batch| !batch.empty? }
       end

@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'async_capable'
+require_relative 'assertions'
 
 module Desiru
   # Base class for all Desiru modules
@@ -53,10 +54,10 @@ module Desiru
         # Return result object
         ModuleResult.new(coerced_outputs, metadata: execution_metadata)
       rescue StandardError => e
-        if config[:retry_on_failure] && @retry_count < Desiru.configuration.max_retries
+        if should_retry?(e)
           @retry_count += 1
-          Desiru.configuration.logger&.warn("Retrying module execution (attempt #{@retry_count}/#{Desiru.configuration.max_retries})")
-          sleep(Desiru.configuration.retry_delay)
+          log_retry(e)
+          sleep(retry_delay_for(e))
           retry
         else
           handle_error(e)
@@ -110,6 +111,46 @@ module Desiru
 
     private
 
+    def should_retry?(error)
+      return false unless config[:retry_on_failure]
+
+      # Handle assertion errors specifically
+      if error.is_a?(Assertions::AssertionError)
+        return error.retriable? && @retry_count < max_retries_for(error)
+      end
+
+      # Default retry logic for other errors
+      @retry_count < Desiru.configuration.max_retries
+    end
+
+    def max_retries_for(error)
+      if error.is_a?(Assertions::AssertionError)
+        Assertions.configuration.max_assertion_retries
+      else
+        Desiru.configuration.max_retries
+      end
+    end
+
+    def retry_delay_for(error)
+      if error.is_a?(Assertions::AssertionError)
+        Assertions.configuration.assertion_retry_delay
+      else
+        Desiru.configuration.retry_delay
+      end
+    end
+
+    def log_retry(error)
+      if error.is_a?(Assertions::AssertionError)
+        Desiru.configuration.logger&.warn(
+          "[ASSERTION RETRY] #{error.message} (attempt #{@retry_count}/#{max_retries_for(error)})"
+        )
+      else
+        Desiru.configuration.logger&.warn(
+          "Retrying module execution (attempt #{@retry_count}/#{Desiru.configuration.max_retries})"
+        )
+      end
+    end
+
     def validate_model!
       return if model.nil? # Will use default
 
@@ -133,8 +174,19 @@ module Desiru
     end
 
     def handle_error(error)
-      Desiru.configuration.logger&.error("Module execution failed: #{error.message}")
-      raise ModuleError, "Module execution failed: #{error.message}"
+      if error.is_a?(Assertions::AssertionError)
+        # Update the assertion error with module context
+        error.instance_variable_set(:@module_name, self.class.name)
+        error.instance_variable_set(:@retry_count, @retry_count)
+        
+        Desiru.configuration.logger&.error(
+          "[ASSERTION FAILED] #{error.message} in #{self.class.name} after #{@retry_count} retries"
+        )
+        raise error
+      else
+        Desiru.configuration.logger&.error("Module execution failed: #{error.message}")
+        raise ModuleError, "Module execution failed: #{error.message}"
+      end
     end
   end
 

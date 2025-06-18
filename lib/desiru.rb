@@ -26,6 +26,10 @@ module Desiru
     def reset_configuration!
       @configuration = Configuration.new
     end
+
+    def logger
+      configuration.logger
+    end
   end
 end
 
@@ -34,6 +38,7 @@ require_relative 'desiru/version'
 require_relative 'desiru/configuration'
 require_relative 'desiru/field'
 require_relative 'desiru/signature'
+require_relative 'desiru/assertions'
 require_relative 'desiru/module'
 require_relative 'desiru/program'
 require_relative 'desiru/registry'
@@ -63,6 +68,9 @@ require_relative 'desiru/jobs/batch_processor'
 # API integrations
 require_relative 'desiru/api'
 require_relative 'desiru/jobs/optimizer_job'
+
+# Persistence layer
+require_relative 'desiru/persistence'
 
 # GraphQL integration (optional, requires 'graphql' gem)
 begin

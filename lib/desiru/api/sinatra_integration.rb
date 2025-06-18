@@ -68,7 +68,9 @@ module Desiru
             end
 
             def format_response(result)
-              if result.is_a?(Hash)
+              if result.is_a?(Desiru::ModuleResult)
+                result.data
+              elsif result.is_a?(Hash)
                 result
               else
                 { result: result }
@@ -112,26 +114,15 @@ module Desiru
             post "/api/v1#{path}" do
               params = parse_json_body
 
-              # Validate required parameters
-              if desiru_module.respond_to?(:input_signature)
-                input_sig = desiru_module.input_signature
-
-                input_sig.each do |param_name, param_type|
-                  halt 400, json(error: "Missing required parameter: #{param_name}") unless params.key?(param_name.to_s)
-
-                  value = params[param_name.to_s]
-                  unless validate_type(value, param_type)
-                    halt 400, json(error: "Invalid type for #{param_name}: expected #{param_type}")
-                  end
-
-                  # Coerce the value to the correct type
-                  params[param_name.to_s] = coerce_value(value, param_type)
-                end
-              end
+              # Convert string keys to symbols for module call
+              symbolized_params = {}
+              params.each { |k, v| symbolized_params[k.to_sym] = v }
 
               begin
-                result = desiru_module.call(params)
+                result = desiru_module.call(symbolized_params)
                 json format_response(result)
+              rescue Desiru::ModuleError => e
+                halt 400, json(error: e.message)
               rescue StandardError => e
                 halt 500, json(error: e.message)
               end
@@ -171,7 +162,7 @@ module Desiru
                   out << "event: result\n"
                   out << "data: #{JSON.generate(format_response(result))}\n\n"
                   out << "event: done\n"
-                  out << "data: {}\n\n"
+                  out << "data: #{JSON.generate({ status: 'complete' })}\n\n"
                 rescue StandardError => e
                   out << "event: error\n"
                   out << "data: #{JSON.generate(error: e.message)}\n\n"

@@ -3,14 +3,16 @@
 module Desiru
   # Represents a field in a signature with type information and metadata
   class Field
-    attr_reader :name, :type, :description, :optional, :default, :validator, :literal_values, :element_type
+    attr_reader :name, :type, :description, :optional, :default, :validator, :literal_values, :element_type,
+                :original_type
 
     alias optional? optional
 
     def initialize(name, type = :string, description: nil, optional: false, default: nil, validator: nil,
-                   literal_values: nil, element_type: nil)
+                   literal_values: nil, element_type: nil, original_type: nil)
       @name = name.to_sym
       @type = normalize_type(type)
+      @original_type = original_type || type.to_s
       @description = description
       @optional = optional
       @default = default

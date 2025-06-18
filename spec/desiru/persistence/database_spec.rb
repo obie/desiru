@@ -6,12 +6,30 @@ require 'desiru/persistence'
 RSpec.describe Desiru::Persistence::Database do
   let(:test_db_url) { 'sqlite::memory:' }
 
-  before do
-    described_class.disconnect
-  end
+  # Use a separate database connection for these tests to avoid interfering
+  # with the :persistence tagged tests that use DatabaseHelper
+  around do |example|
+    # Save current connection if any
+    original_connection = described_class.instance_variable_get(:@connection)
+    if defined?(Desiru::Persistence::Setup)
+      original_initialized = Desiru::Persistence::Setup.instance_variable_get(:@initialized)
+    end
+    original_repositories = Desiru::Persistence.instance_variable_get(:@repositories)
 
-  after do
+    # Disconnect and clear state
     described_class.disconnect
+    Desiru::Persistence.instance_variable_set(:@repositories, {})
+    Desiru::Persistence::Setup.instance_variable_set(:@initialized, false) if defined?(Desiru::Persistence::Setup)
+
+    # Run test
+    example.run
+
+    # Restore original state
+    described_class.instance_variable_set(:@connection, original_connection)
+    Desiru::Persistence.instance_variable_set(:@repositories, original_repositories)
+    if defined?(Desiru::Persistence::Setup) && !original_initialized.nil?
+      Desiru::Persistence::Setup.instance_variable_set(:@initialized, original_initialized)
+    end
   end
 
   describe '.connect' do
