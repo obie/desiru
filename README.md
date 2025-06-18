@@ -272,6 +272,95 @@ This approach makes Desiru particularly well-suited for:
 - Systems requiring job persistence and reliability
 - Deployments that need to scale horizontally
 
+### ReAct Module (Tool-Using Agents)
+
+The ReAct module enables building AI agents that can reason about tasks and use tools to gather information:
+
+```ruby
+# Define tools for your agent
+class WeatherTool
+  def self.name
+    "get_weather"
+  end
+  
+  def self.description
+    "Get current weather for a city. Args: city (string)"
+  end
+  
+  def self.call(city:)
+    # Your weather API integration
+    "Current weather in #{city}: sunny, 72°F"
+  end
+end
+
+# Create a ReAct agent with tools
+tools = [WeatherTool, CalculatorTool]
+agent = Desiru::Modules::ReAct.new(
+  'question: string -> answer: string',
+  tools: tools,
+  max_iterations: 5
+)
+
+# The agent will reason and use tools to answer
+result = agent.call(
+  question: "What's the weather in Tokyo and is 72°F warm in Celsius?"
+)
+# The agent will:
+# 1. Call get_weather tool for Tokyo
+# 2. Use calculator to convert 72°F to Celsius
+# 3. Synthesize the final answer
+```
+
+Key features:
+- **Flexible tool format**: Pass tools as classes, hashes, or callables
+- **Automatic reasoning**: The agent decides which tools to use and when
+- **Trajectory management**: Automatically handles long conversations
+- **Error handling**: Gracefully handles tool execution failures
+- **Iteration limits**: Prevents infinite loops
+
+### GraphQL Integration
+
+Desiru provides GraphQL integration with automatic schema generation and efficient batch loading:
+
+```ruby
+require 'desiru/graphql'
+
+# Register your Desiru modules
+generator = Desiru::GraphQL::SchemaGenerator.new
+generator.register_signature('questionAnswer', qa_module)
+generator.register_signature('summarize', summarizer_module)
+
+# Generate GraphQL schema
+schema = generator.generate_schema
+
+# Use with your GraphQL server
+result = schema.execute(
+  query,
+  context: { current_user: user },
+  variables: variables
+)
+```
+
+Features include:
+- **Automatic schema generation** from Desiru signatures
+- **DataLoader pattern** for N+1 query prevention
+- **Batch execution** for multiple queries
+- **Type mapping** including support for Literal types as GraphQL enums
+- **Thread-safe** promise-based lazy loading
+
+#### GraphQL Batch Loading Example
+
+```ruby
+# The executor automatically batches multiple field requests
+executor = Desiru::GraphQL::Executor.new(schema)
+
+# Execute multiple queries efficiently in a single batch
+results = executor.execute_batch([
+  { query: query1, variables: vars1 },
+  { query: query2, variables: vars2 }
+])
+```
+
 ## Examples
 
 ### Retrieval-Augmented Generation (RAG)
