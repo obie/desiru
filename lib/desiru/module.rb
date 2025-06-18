@@ -1,13 +1,13 @@
 # frozen_string_literal: true
 
-# require_relative 'async_capable'
+require_relative 'async_capable'
 
 module Desiru
   # Base class for all Desiru modules
   # Implements the core module pattern with service-oriented design
   class Module
     extend Forwardable
-    # include AsyncCapable
+    include AsyncCapable
 
     attr_reader :signature, :model, :config, :demos, :metadata
 

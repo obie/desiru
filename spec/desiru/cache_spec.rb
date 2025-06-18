@@ -9,7 +9,7 @@ RSpec.describe Desiru::Cache do
     it 'stores and retrieves values' do
       result = cache.get_or_set('key1') { 'value1' }
       expect(result).to eq('value1')
-      
+
       # Should return cached value without calling block
       result = cache.get_or_set('key1') { 'value2' }
       expect(result).to eq('value1')
@@ -18,10 +18,10 @@ RSpec.describe Desiru::Cache do
     it 'respects TTL' do
       cache.get_or_set('key1', ttl: 0.1) { 'value1' }
       expect(cache.get('key1')).to eq('value1')
-      
+
       sleep 0.2
       expect(cache.get('key1')).to be_nil
-      
+
       # Should call block again after expiry
       result = cache.get_or_set('key1', ttl: 1) { 'value2' }
       expect(result).to eq('value2')
@@ -30,7 +30,7 @@ RSpec.describe Desiru::Cache do
     it 'is thread-safe' do
       results = []
       threads = []
-      
+
       10.times do |i|
         threads << Thread.new do
           result = cache.get_or_set("key#{i % 3}") do
@@ -40,7 +40,7 @@ RSpec.describe Desiru::Cache do
           results << result
         end
       end
-      
+
       threads.each(&:join)
       expect(results.size).to eq(10)
       expect(results.uniq.size).to be <= 3 # At most 3 unique values
@@ -94,7 +94,7 @@ RSpec.describe Desiru::Cache do
       cache.set('key1', 'value1')
       cache.set('key2', 'value2')
       cache.clear
-      
+
       expect(cache.get('key1')).to be_nil
       expect(cache.get('key2')).to be_nil
       expect(cache.size).to eq(0)
@@ -104,13 +104,13 @@ RSpec.describe Desiru::Cache do
   describe '#size' do
     it 'returns the number of entries' do
       expect(cache.size).to eq(0)
-      
+
       cache.set('key1', 'value1')
       expect(cache.size).to eq(1)
-      
+
       cache.set('key2', 'value2')
       expect(cache.size).to eq(2)
-      
+
       cache.delete('key1')
       expect(cache.size).to eq(1)
     end
@@ -123,13 +123,13 @@ RSpec.describe Desiru::Cache do
       small_cache.set('key1', 'value1')
       small_cache.set('key2', 'value2')
       small_cache.set('key3', 'value3')
-      
+
       # Access key1 to make it more recently used
       small_cache.get('key1')
-      
+
       # Adding key4 should evict key2 (least recently used)
       small_cache.set('key4', 'value4')
-      
+
       expect(small_cache.get('key1')).to eq('value1')
       expect(small_cache.get('key2')).to be_nil
       expect(small_cache.get('key3')).to eq('value3')
@@ -140,17 +140,17 @@ RSpec.describe Desiru::Cache do
       small_cache.set('key1', 'value1')
       small_cache.set('key2', 'value2')
       small_cache.set('key3', 'value3')
-      
+
       # Access keys in order: key2, key3, key1
       small_cache.get('key2')
       sleep 0.01
       small_cache.get('key3')
       sleep 0.01
       small_cache.get('key1')
-      
+
       # key2 should be evicted as least recently used
       small_cache.set('key4', 'value4')
-      
+
       expect(small_cache.get('key1')).to eq('value1')
       expect(small_cache.get('key2')).to be_nil
       expect(small_cache.get('key3')).to eq('value3')
@@ -162,10 +162,10 @@ RSpec.describe Desiru::Cache do
     it 'removes expired entries' do
       cache.set('key1', 'value1', ttl: 0.1)
       cache.set('key2', 'value2', ttl: 10)
-      
+
       sleep 0.2
       cache.cleanup_expired
-      
+
       expect(cache.get('key1')).to be_nil
       expect(cache.get('key2')).to eq('value2')
       expect(cache.size).to eq(1)
@@ -178,12 +178,12 @@ RSpec.describe Desiru::Cache do
     it 'automatically cleans up expired entries' do
       cache_with_cleanup.set('key1', 'value1', ttl: 0.05)
       cache_with_cleanup.set('key2', 'value2', ttl: 10)
-      
+
       sleep 0.15
-      
+
       # Trigger cleanup by setting a new value
       cache_with_cleanup.set('key3', 'value3')
-      
+
       expect(cache_with_cleanup.size).to eq(2) # key1 should be cleaned up
       expect(cache_with_cleanup.get('key1')).to be_nil
       expect(cache_with_cleanup.get('key2')).to eq('value2')
@@ -206,7 +206,7 @@ RSpec.describe Desiru::Cache do
     it 'handles concurrent access to same key' do
       counter = 0
       threads = []
-      
+
       10.times do
         threads << Thread.new do
           cache.get_or_set('shared_key') do
@@ -216,9 +216,9 @@ RSpec.describe Desiru::Cache do
           end
         end
       end
-      
+
       threads.each(&:join)
-      
+
       # Block should only be called once
       expect(counter).to eq(1)
       expect(cache.get('shared_key')).to eq('shared_value')

@@ -50,11 +50,11 @@ RSpec.describe Desiru::Jobs::BatchProcessor do
       it 'processes all inputs and stores results' do
         # Allow status updates
         allow(redis).to receive(:setex).with(/desiru:status:/, anything, anything)
-        
+
         # Expect result storage
         expect(redis).to receive(:setex).at_least(:once) do |key, ttl, json_data|
           next unless key == "desiru:results:#{batch_id}" # Skip status updates
-          
+
           expect(ttl).to eq(7200)
           data = JSON.parse(json_data, symbolize_names: true)
           expect(data[:success]).to be true
@@ -83,9 +83,7 @@ RSpec.describe Desiru::Jobs::BatchProcessor do
       it 'processes successful inputs and records errors' do
         stored_data = nil
         allow(redis).to receive(:setex) do |key, _ttl, data|
-          if key == "desiru:results:#{batch_id}"
-            stored_data = JSON.parse(data, symbolize_names: true)
-          end
+          stored_data = JSON.parse(data, symbolize_names: true) if key == "desiru:results:#{batch_id}"
         end
 
         job.perform(batch_id, module_class, signature_str, inputs_array, options)

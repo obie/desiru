@@ -11,25 +11,25 @@ RSpec.describe Desiru::Modules::ReAct do
       "The weather in #{city} is sunny with a temperature of 72°F."
     end
   end
-  
+
   let(:calculator_tool) do
     lambda do |operation:, a:, b:|
       case operation
       when 'add' then a + b
       when 'multiply' then a * b
-      when 'divide' then b != 0 ? a.to_f / b : 'Error: Division by zero'
+      when 'divide' then b == 0 ? 'Error: Division by zero' : a.to_f / b
       else "Unknown operation: #{operation}"
       end
     end
   end
-  
+
   let(:tools) do
     [
       { name: 'get_weather', function: weather_tool },
       { name: 'calculator', function: calculator_tool }
     ]
   end
-  
+
   let(:react_module) { described_class.new(signature, tools: tools, max_iterations: 3, model: mock_model) }
 
   describe '#initialize' do
@@ -47,7 +47,7 @@ RSpec.describe Desiru::Modules::ReAct do
       ]
       module1 = described_class.new(signature, tools: array_tools, model: mock_model)
       expect(module1.tools.keys).to include('tool1', 'tool2', 'finish')
-      
+
       # Test with hash format
       hash_tools = [
         { 'name' => 'tool3', 'function' => -> { 'result3' } }
@@ -64,7 +64,7 @@ RSpec.describe Desiru::Modules::ReAct do
         allow_any_instance_of(Desiru::Modules::ChainOfThought).to receive(:call) do |_, inputs|
           if inputs.key?(:trajectory)
             trajectory = inputs[:trajectory]
-            
+
             if trajectory == "No actions taken yet."
               # First iteration: ask for weather
               {
@@ -94,7 +94,7 @@ RSpec.describe Desiru::Modules::ReAct do
 
       it 'executes tools and produces output' do
         result = react_module.call(question: "What's the weather in Tokyo?")
-        
+
         expect(result[:answer]).to include("weather in Tokyo")
         expect(result[:answer]).to include("sunny")
         expect(result[:answer]).to include("72°F")
@@ -104,11 +104,10 @@ RSpec.describe Desiru::Modules::ReAct do
     context 'with calculation task' do
       before do
         step = 0
-        allow_any_instance_of(Desiru::Modules::ChainOfThought).to receive(:call) do |instance, inputs|
-          
+        allow_any_instance_of(Desiru::Modules::ChainOfThought).to receive(:call) do |instance, _inputs|
           # Check what outputs this instance expects
           expected_outputs = instance.signature.output_fields.keys
-          
+
           if expected_outputs.include?('next_thought')
             # React phase - we're selecting tools
             step += 1
@@ -124,7 +123,7 @@ RSpec.describe Desiru::Modules::ReAct do
               # Second calculation
               {
                 next_thought: "Now I'll add 25 to the result.",
-                next_tool_name: "calculator", 
+                next_tool_name: "calculator",
                 next_tool_args: '{"operation": "add", "a": 120, "b": 25}'
               }
             when 3
@@ -153,27 +152,27 @@ RSpec.describe Desiru::Modules::ReAct do
 
       it 'performs multi-step calculations' do
         result = react_module.call(question: "What is (15 * 8) + 25?")
-        
+
         expect(result[:answer]).to include("145")
       end
     end
 
     context 'with tool errors' do
       let(:error_tool) do
-        lambda do |**args|
+        lambda do |**_args|
           raise "Tool error: Something went wrong"
         end
       end
-      
+
       let(:tools) { [{ name: 'error_tool', function: error_tool }] }
 
       before do
         allow_any_instance_of(Desiru::Modules::ChainOfThought).to receive(:call) do |instance, inputs|
           expected_outputs = instance.signature.output_fields.keys
-          
+
           if expected_outputs.include?('next_thought')
             trajectory = inputs[:trajectory]
-            
+
             if trajectory == "No actions taken yet."
               {
                 next_thought: "I'll use the error tool.",
@@ -204,7 +203,7 @@ RSpec.describe Desiru::Modules::ReAct do
 
       it 'handles tool execution errors gracefully' do
         result = react_module.call(question: "Test error handling")
-        
+
         expect(result[:answer]).to include("error")
         expect { result }.not_to raise_error
       end
@@ -215,12 +214,12 @@ RSpec.describe Desiru::Modules::ReAct do
 
       before do
         iteration = 0
-        allow_any_instance_of(Desiru::Modules::ChainOfThought).to receive(:call) do |instance, inputs|
+        allow_any_instance_of(Desiru::Modules::ChainOfThought).to receive(:call) do |instance, _inputs|
           expected_outputs = instance.signature.output_fields.keys
-          
+
           if expected_outputs.include?('next_thought')
             iteration += 1
-            
+
             # Never call finish, just keep using tools
             {
               next_thought: "Iteration #{iteration}",
@@ -238,7 +237,7 @@ RSpec.describe Desiru::Modules::ReAct do
 
       it 'stops after max iterations' do
         result = react_module.call(question: "Keep going forever")
-        
+
         expect(result[:answer]).to eq("Reached maximum iterations")
       end
     end
@@ -291,7 +290,7 @@ RSpec.describe Desiru::Modules::ReAct do
           args: {}
         }
       ]
-      
+
       formatted = react_module.send(:format_trajectory, trajectory)
       expect(formatted).to include("Step 1:")
       expect(formatted).to include("Thought: I need weather info")
@@ -311,10 +310,10 @@ RSpec.describe Desiru::Modules::ReAct do
           observation: "A very long observation " * 20
         }
       end
-      
+
       truncated = react_module.send(:truncate_trajectory, long_trajectory, max_length: 1000)
       formatted = react_module.send(:format_trajectory, truncated)
-      
+
       expect(formatted.length).to be <= 1000
       expect(truncated.length).to be < long_trajectory.length
     end
@@ -323,7 +322,7 @@ RSpec.describe Desiru::Modules::ReAct do
       short_trajectory = [
         { thought: "Quick thought", tool: "finish", args: {} }
       ]
-      
+
       truncated = react_module.send(:truncate_trajectory, short_trajectory)
       expect(truncated).to eq(short_trajectory)
     end
@@ -334,11 +333,11 @@ RSpec.describe Desiru::Modules::ReAct do
     let(:search_tool) do
       results = search_results # Capture in closure
       lambda do |query:|
-        results.find { |r| r[:title].downcase.include?(query.downcase) } || 
+        results.find { |r| r[:title].downcase.include?(query.downcase) } ||
           { title: "No results found", content: "Try a different query" }
       end
     end
-    
+
     let(:tools) do
       [{ name: 'search', function: search_tool }]
     end
@@ -346,13 +345,13 @@ RSpec.describe Desiru::Modules::ReAct do
     before do
       search_results << { title: "Ruby Programming", content: "Ruby is a dynamic language" }
       search_results << { title: "Python Guide", content: "Python is great for data science" }
-      
+
       allow_any_instance_of(Desiru::Modules::ChainOfThought).to receive(:call) do |instance, inputs|
         expected_outputs = instance.signature.output_fields.keys
-        
+
         if expected_outputs.include?('next_thought')
           trajectory = inputs[:trajectory]
-          
+
           if trajectory == "No actions taken yet."
             {
               next_thought: "I'll search for Ruby information.",
@@ -383,7 +382,7 @@ RSpec.describe Desiru::Modules::ReAct do
 
     it 'integrates with custom tools' do
       result = react_module.call(question: "Tell me about Ruby")
-      
+
       expect(result[:answer]).to include("Ruby")
       expect(result[:answer]).to include("dynamic")
     end

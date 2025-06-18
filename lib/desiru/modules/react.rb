@@ -15,11 +15,11 @@ module Desiru
         super(signature, model: model)
         @tools = normalize_tools(tools)
         @max_iterations = max_iterations
-        
+
         # Build the ReAct signature for reasoning and tool selection
         react_signature = build_react_signature
         @react_module = ChainOfThought.new(react_signature, model: @model)
-        
+
         # Build extraction signature for final output
         extract_signature = build_extract_signature
         @extract_module = ChainOfThought.new(extract_signature, model: @model)
@@ -27,37 +27,35 @@ module Desiru
 
       def forward(inputs)
         trajectory = []
-        
-        max_iterations.times do |iteration|
+
+        max_iterations.times do |_iteration|
           # Get the next action from the model
           react_inputs = prepare_react_inputs(inputs, trajectory)
           react_output = react_module.call(react_inputs)
-          
+
           # Extract the tool name and arguments
           tool_name = react_output[:next_tool_name]
           tool_args = parse_tool_args(react_output[:next_tool_args])
-          
+
           # Add reasoning to trajectory
           trajectory << {
             thought: react_output[:next_thought],
             tool: tool_name,
             args: tool_args
           }
-          
+
           # Check if we're done
-          if tool_name == "finish"
-            break
-          end
-          
+          break if tool_name == "finish"
+
           # Execute the tool
           begin
             tool_result = execute_tool(tool_name, tool_args)
             trajectory.last[:observation] = tool_result
-          rescue => e
+          rescue StandardError => e
             trajectory.last[:observation] = "Error: #{e.message}"
           end
         end
-        
+
         # Extract final outputs from trajectory
         extract_inputs = prepare_extract_inputs(inputs, trajectory)
         extract_module.call(extract_inputs)
@@ -68,7 +66,7 @@ module Desiru
       def normalize_tools(tools)
         # Convert tools to a consistent format
         normalized = {}
-        
+
         tools.each do |tool|
           case tool
           when Hash
@@ -89,34 +87,34 @@ module Desiru
             end
           end
         end
-        
+
         # Always include the finish tool
         normalized["finish"] = -> { "Task completed" }
-        
+
         normalized
       end
 
       def build_react_signature
         # Build signature for reasoning and tool selection
         input_fields = signature.input_fields.keys.join(", ")
-        
+
         # Create the ReAct signature
         react_sig = "#{input_fields}, trajectory -> next_thought, next_tool_name, next_tool_args"
-        
+
         # Add instructions
         instructions = <<~INST
           You are an AI agent that can use tools to accomplish tasks.
-          
+
           Available tools:
           #{format_tool_descriptions}
-          
+
           Based on the input and trajectory so far, reason about what to do next.
           Then select a tool to use and provide the arguments for that tool.
-          
+
           When you have gathered enough information to answer the question,
           use the "finish" tool to complete the task.
         INST
-        
+
         Signature.new(react_sig, descriptions: { 'next_thought' => instructions })
       end
 
@@ -124,14 +122,14 @@ module Desiru
         # Build signature for extracting final outputs
         input_fields = signature.input_fields.keys.join(", ")
         output_fields = signature.output_fields.keys.join(", ")
-        
+
         extract_sig = "#{input_fields}, trajectory -> #{output_fields}"
-        
+
         instructions = <<~INST
           Based on the trajectory of thoughts and tool observations,
           extract the final #{output_fields} to answer the original question.
         INST
-        
+
         Signature.new(extract_sig, descriptions: { output_fields => instructions })
       end
 
@@ -167,7 +165,7 @@ module Desiru
 
       def format_trajectory(trajectory)
         return "No actions taken yet." if trajectory.empty?
-        
+
         trajectory.map.with_index do |step, i|
           parts = ["Step #{i + 1}:"]
           parts << "Thought: #{step[:thought]}" if step[:thought]
@@ -181,7 +179,7 @@ module Desiru
       def parse_tool_args(args_string)
         # Parse tool arguments from string format
         return {} if args_string.nil? || args_string.strip.empty?
-        
+
         # Try to parse as JSON first
         begin
           require 'json'
@@ -195,12 +193,12 @@ module Desiru
       def parse_simple_args(args_string)
         # Parse simple key:value format
         args = {}
-        
+
         # Match patterns like key:value or key=value
         args_string.scan(/(\w+)[:=]\s*([^,]+)/).each do |key, value|
           # Clean up the value
           value = value.strip.gsub(/^["']|["']$/, '') # Remove quotes
-          
+
           # Try to convert to appropriate type
           args[key.to_sym] = case value.downcase
                              when 'true' then true
@@ -210,15 +208,15 @@ module Desiru
                              else value
                              end
         end
-        
+
         args
       end
 
       def execute_tool(tool_name, args)
         tool = tools[tool_name]
-        
+
         raise "Unknown tool: #{tool_name}" unless tool
-        
+
         # Call the tool with arguments
         if tool.arity == 0
           tool.call
@@ -243,19 +241,20 @@ module Desiru
       # Support for truncating trajectory if it gets too long
       def truncate_trajectory(trajectory, max_length: 3000)
         formatted = format_trajectory(trajectory)
-        
+
         return trajectory if formatted.length <= max_length
-        
+
         # Remove oldest steps until we're under the limit
         truncated = trajectory.dup
-        
+
         # Keep removing the oldest steps until we're under the limit
         while truncated.length > 1
           truncated_formatted = format_trajectory(truncated)
           break if truncated_formatted.length <= max_length
+
           truncated.shift
         end
-        
+
         # If even a single step is too long, truncate its content
         if truncated.length == 1 && format_trajectory(truncated).length > max_length
           step = truncated[0]
@@ -264,11 +263,9 @@ module Desiru
             step[:observation] = step[:observation][0..100] + "... (truncated)"
           end
           # Truncate thought if it's very long
-          if step[:thought] && step[:thought].length > 100
-            step[:thought] = step[:thought][0..100] + "... (truncated)"
-          end
+          step[:thought] = step[:thought][0..100] + "... (truncated)" if step[:thought] && step[:thought].length > 100
         end
-        
+
         truncated
       end
     end

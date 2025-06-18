@@ -70,7 +70,7 @@ RSpec.describe Desiru::GraphQL::DataLoader do
   describe '#perform_loads' do
     it 'processes all pending loads in batch' do
       loader = data_loader.for(test_module)
-      
+
       promises = []
       3.times do |i|
         promises << loader.load({ input: "test#{i}" })
@@ -91,7 +91,7 @@ RSpec.describe Desiru::GraphQL::DataLoader do
 
     it 'groups inputs by signature for efficient processing' do
       loader = data_loader.for(test_module)
-      
+
       # Load with different input structures
       promise1 = loader.load({ input: "a", extra: 1 })
       promise2 = loader.load({ input: "b", extra: 2 })
@@ -106,7 +106,7 @@ RSpec.describe Desiru::GraphQL::DataLoader do
 
     it 'respects batch_size limits' do
       loader = data_loader.for(test_module, batch_size: 2)
-      
+
       # Queue more items than batch_size
       promises = 5.times.map { |i| loader.load({ input: "test#{i}" }) }
 
@@ -136,17 +136,17 @@ RSpec.describe Desiru::GraphQL::DataLoader do
   describe '#clear!' do
     it 'clears all caches and pending loads' do
       loader = data_loader.for(test_module, cache: true)
-      
+
       # Create some cached data
-      promise1 = loader.load({ input: "test" })
+      loader.load({ input: "test" })
       data_loader.perform_loads
-      
+
       # Queue a new load
-      promise2 = loader.load({ input: "test2" })
-      
+      loader.load({ input: "test2" })
+
       # Clear everything
       data_loader.clear!
-      
+
       # The pending load should be cleared
       pending_loads = data_loader.instance_variable_get(:@pending_loads)
       expect(pending_loads).to be_empty
@@ -165,7 +165,7 @@ RSpec.describe Desiru::GraphQL::DataLoader do
       it 'queues the load for batch processing' do
         promise = loader.load({ input: "test" })
         expect(promise.fulfilled?).to be false
-        
+
         data_loader.perform_loads
         expect(promise.fulfilled?).to be true
       end
@@ -189,7 +189,7 @@ RSpec.describe Desiru::GraphQL::DataLoader do
         let(:loader) { data_loader.for(test_module, cache: false) }
 
         it 'does not cache results' do
-          promise1 = loader.load({ input: "test" })
+          loader.load({ input: "test" })
           data_loader.perform_loads
 
           # Second load should not use cache
@@ -206,9 +206,9 @@ RSpec.describe Desiru::GraphQL::DataLoader do
         it 'uses batch_forward when available' do
           results = loader.process_batch([{ input: "a" }, { input: "b" }])
           expect(results).to eq([
-            { result: "Batch: a" },
-            { result: "Batch: b" }
-          ])
+                                  { result: "Batch: a" },
+                                  { result: "Batch: b" }
+                                ])
         end
       end
 
@@ -216,9 +216,9 @@ RSpec.describe Desiru::GraphQL::DataLoader do
         it 'falls back to individual processing' do
           results = loader.process_batch([{ input: "a" }, { input: "b" }])
           expect(results).to eq([
-            { result: "Processed: a" },
-            { result: "Processed: b" }
-          ])
+                                  { result: "Processed: a" },
+                                  { result: "Processed: b" }
+                                ])
         end
       end
     end
@@ -229,7 +229,7 @@ RSpec.describe Desiru::GraphQL::DataLoader do
       it 'fulfills the promise with a value' do
         promise = Desiru::GraphQL::DataLoader::Promise.new
         promise.fulfill("test value")
-        
+
         expect(promise.fulfilled?).to be true
         expect(promise.value).to eq("test value")
       end
@@ -238,17 +238,17 @@ RSpec.describe Desiru::GraphQL::DataLoader do
         promise = Desiru::GraphQL::DataLoader::Promise.new
         promise.fulfill("first")
         promise.fulfill("second")
-        
+
         expect(promise.value).to eq("first")
       end
 
       it 'executes callbacks' do
         promise = Desiru::GraphQL::DataLoader::Promise.new
         callback_value = nil
-        
+
         promise.then { |value| callback_value = value }
         promise.fulfill("test")
-        
+
         expect(callback_value).to eq("test")
       end
     end
@@ -258,7 +258,7 @@ RSpec.describe Desiru::GraphQL::DataLoader do
         promise = Desiru::GraphQL::DataLoader::Promise.new
         error = StandardError.new("test error")
         promise.reject(error)
-        
+
         expect(promise.rejected?).to eq(true)
         expect { promise.value }.to raise_error(StandardError, "test error")
       end
@@ -268,20 +268,20 @@ RSpec.describe Desiru::GraphQL::DataLoader do
       it 'executes callback immediately if already fulfilled' do
         promise = Desiru::GraphQL::DataLoader::Promise.new
         promise.fulfill("test")
-        
+
         callback_value = nil
         promise.then { |value| callback_value = value }
-        
+
         expect(callback_value).to eq("test")
       end
 
       it 'queues callback if not yet fulfilled' do
         promise = Desiru::GraphQL::DataLoader::Promise.new
         callback_value = nil
-        
+
         promise.then { |value| callback_value = value }
         expect(callback_value).to be_nil
-        
+
         promise.fulfill("test")
         expect(callback_value).to eq("test")
       end
@@ -290,19 +290,19 @@ RSpec.describe Desiru::GraphQL::DataLoader do
     describe '#value' do
       it 'waits for fulfillment' do
         promise = Desiru::GraphQL::DataLoader::Promise.new
-        
+
         Thread.new do
           sleep 0.1
           promise.fulfill("delayed value")
         end
-        
+
         value = promise.value
         expect(value).to eq("delayed value")
       end
 
       it 'supports timeout' do
         promise = Desiru::GraphQL::DataLoader::Promise.new
-        
+
         expect { promise.value(timeout: 0.1) }.to raise_error("Promise not yet fulfilled")
       end
     end
@@ -311,16 +311,16 @@ RSpec.describe Desiru::GraphQL::DataLoader do
       it 'handles concurrent fulfillment attempts' do
         promise = Desiru::GraphQL::DataLoader::Promise.new
         results = []
-        
+
         threads = 10.times.map do |i|
           Thread.new do
             promise.fulfill("value #{i}")
             results << promise.value
           end
         end
-        
+
         threads.each(&:join)
-        
+
         # All threads should see the same value
         expect(results.uniq.size).to eq(1)
       end
@@ -329,7 +329,7 @@ RSpec.describe Desiru::GraphQL::DataLoader do
         promise = Desiru::GraphQL::DataLoader::Promise.new
         callback_count = 0
         mutex = Mutex.new
-        
+
         threads = 10.times.map do
           Thread.new do
             promise.then do |_value|
@@ -337,15 +337,148 @@ RSpec.describe Desiru::GraphQL::DataLoader do
             end
           end
         end
-        
+
         threads.each(&:join)
         promise.fulfill("test")
-        
+
         # Allow callbacks to complete
         sleep 0.1
-        
+
         expect(callback_count).to eq(10)
       end
+    end
+  end
+
+  describe 'request deduplication' do
+    let(:counting_module) do
+      call_count = 0
+
+      Class.new do
+        define_singleton_method(:call_count) { call_count }
+        define_singleton_method(:reset_count!) { call_count = 0 }
+
+        attr_reader :signature
+
+        def initialize(signature)
+          @signature = signature
+        end
+
+        def call(inputs)
+          self.class.send(:increment_count)
+          { result: "Called: #{inputs[:input]}" }
+        end
+
+        def batch_forward(inputs_array)
+          self.class.send(:increment_count)
+          inputs_array.map { |inputs| { result: "Batch: #{inputs[:input]}" } }
+        end
+
+        def self.name
+          'CountingModule'
+        end
+
+        define_singleton_method(:increment_count) { call_count += 1 }
+      end
+    end
+
+    before do
+      counting_module.reset_count!
+    end
+
+    it 'deduplicates identical requests within the same batch' do
+      loader = data_loader.for(counting_module)
+
+      # Load the same input multiple times
+      promises = 5.times.map { loader.load({ input: "same" }) }
+
+      # Should all be the same promise object
+      expect(promises.uniq.size).to eq(1)
+
+      data_loader.perform_loads
+
+      # Module should only be called once
+      expect(counting_module.call_count).to eq(1)
+
+      # All promises should have the same result
+      results = promises.map(&:value)
+      expect(results.uniq.size).to eq(1)
+      expect(results.first).to eq({ result: "Batch: same" })
+    end
+
+    it 'processes different requests separately' do
+      loader = data_loader.for(counting_module)
+
+      # Load different inputs
+      promise1 = loader.load({ input: "a" })
+      promise2 = loader.load({ input: "b" })
+      promise3 = loader.load({ input: "a" }) # duplicate of first
+
+      # First and third should be the same promise
+      expect(promise1).to eq(promise3)
+      expect(promise1).not_to eq(promise2)
+
+      data_loader.perform_loads
+
+      # Module should be called once with 2 unique inputs
+      expect(counting_module.call_count).to eq(1)
+
+      expect(promise1.value).to eq({ result: "Batch: a" })
+      expect(promise2.value).to eq({ result: "Batch: b" })
+      expect(promise3.value).to eq({ result: "Batch: a" })
+    end
+
+    it 'handles deduplication with cache disabled' do
+      loader = data_loader.for(counting_module, cache: false)
+
+      # Load same input multiple times
+      promise1 = loader.load({ input: "test" })
+      promise2 = loader.load({ input: "test" })
+
+      # Should deduplicate even without cache
+      expect(promise1).to eq(promise2)
+
+      data_loader.perform_loads
+
+      # Should only call module once
+      expect(counting_module.call_count).to eq(1)
+    end
+
+    it 'deduplicates across different key orders' do
+      loader = data_loader.for(counting_module)
+
+      # Same data, different key order
+      promise1 = loader.load({ a: 1, b: 2 })
+      promise2 = loader.load({ b: 2, a: 1 })
+
+      # Should recognize as the same request
+      expect(promise1).to eq(promise2)
+
+      data_loader.perform_loads
+
+      expect(counting_module.call_count).to eq(1)
+    end
+
+    it 'handles concurrent duplicate requests' do
+      loader = data_loader.for(counting_module)
+      promises = []
+      mutex = Mutex.new
+
+      threads = 10.times.map do
+        Thread.new do
+          promise = loader.load({ input: "concurrent" })
+          mutex.synchronize { promises << promise }
+        end
+      end
+
+      threads.each(&:join)
+
+      # All should be the same promise
+      expect(promises.uniq.size).to eq(1)
+
+      data_loader.perform_loads
+
+      # Module should only be called once
+      expect(counting_module.call_count).to eq(1)
     end
   end
 end

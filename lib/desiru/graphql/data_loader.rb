@@ -9,6 +9,8 @@ module Desiru
         @loaders = {}
         @results_cache = {}
         @pending_loads = Hash.new { |h, k| h[k] = [] }
+        @pending_promises = Hash.new { |h, k| h[k] = {} }
+        @mutex = Mutex.new
       end
 
       # Get or create a loader for a specific module
@@ -21,50 +23,24 @@ module Desiru
 
       # Execute all pending loads in batch
       def perform_loads
-        @pending_loads.each do |loader_key, batch|
-          next if batch.empty?
-
-          loader = @loaders[loader_key]
-          next unless loader # Skip if loader not found
-
-          inputs_array = batch.map(&:first)
-
-          # Create a map to preserve input order
-          results_map = {}
-
-          # Process the batch through the loader
-          begin
-            results = loader.load_batch(inputs_array)
-            inputs_array.each_with_index do |inputs, idx|
-              results_map[inputs.object_id] = results[idx]
-            end
-          rescue StandardError => e
-            # Mark all promises as rejected on error
-            inputs_array.each do |inputs|
-              results_map[inputs.object_id] = { error: e }
-            end
+        @mutex.synchronize do
+          @pending_loads.each do |loader_key, batch|
+            process_loader_batch(loader_key, batch)
           end
 
-          # Fulfill or reject promises with results
-          batch.each do |inputs, promise|
-            result = results_map[inputs.object_id]
-
-            if result.is_a?(Hash) && result[:error]
-              promise.reject(result[:error])
-            else
-              promise.fulfill(result)
-            end
-          end
+          @pending_loads.clear
+          @pending_promises.clear
         end
-
-        @pending_loads.clear
       end
 
       # Clear all caches
       def clear!
-        @results_cache.clear
-        @pending_loads.clear
-        @loaders.each_value(&:clear_cache!)
+        @mutex.synchronize do
+          @results_cache.clear
+          @pending_loads.clear
+          @pending_promises.clear
+          @loaders.each_value(&:clear_cache!)
+        end
       end
 
       private
@@ -77,6 +53,69 @@ module Desiru
         inputs_array.group_by do |inputs|
           # Group by input keys to process similar queries together
           inputs.keys.sort.join(':')
+        end
+      end
+
+      def process_loader_batch(loader_key, batch)
+        return if batch.empty?
+
+        loader = @loaders[loader_key]
+        return unless loader # Skip if loader not found
+
+        # Deduplicate requests
+        unique_inputs_map, promises_by_inputs = deduplicate_batch(batch)
+        unique_inputs = unique_inputs_map.values
+
+        # Process batch and handle results
+        results_map = execute_batch(loader, unique_inputs, unique_inputs_map)
+
+        # Fulfill promises with results
+        fulfill_promises(promises_by_inputs, results_map)
+      end
+
+      def deduplicate_batch(batch)
+        unique_inputs_map = {}
+        promises_by_inputs = Hash.new { |h, k| h[k] = [] }
+
+        batch.each do |inputs, promise|
+          input_key = inputs.sort.to_h.hash
+          unique_inputs_map[input_key] = inputs
+          promises_by_inputs[input_key] << promise
+        end
+
+        [unique_inputs_map, promises_by_inputs]
+      end
+
+      def execute_batch(loader, unique_inputs, unique_inputs_map)
+        results_map = {}
+
+        begin
+          results = loader.load_batch(unique_inputs)
+          unique_inputs.each_with_index do |inputs, idx|
+            input_key = inputs.sort.to_h.hash
+            results_map[input_key] = results[idx]
+          end
+        rescue StandardError => e
+          # Mark all promises as rejected on error
+          unique_inputs_map.each_key do |input_key|
+            results_map[input_key] = { error: e }
+          end
+        end
+
+        results_map
+      end
+
+      def fulfill_promises(promises_by_inputs, results_map)
+        promises_by_inputs.each do |input_key, promises|
+          result = results_map[input_key]
+
+          promises.each do |promise|
+            if result.is_a?(Hash) && result[:error]
+              promise.reject(result[:error])
+            else
+              promise.fulfill(result)
+            end
+          end
         end
       end
 
@@ -113,6 +152,10 @@ module Desiru
             promise.fulfill(@cache_store[cache_key(inputs)])
             promise
           else
+            # Check for existing pending promise to enable deduplication
+            existing_promise = check_pending_promise(inputs)
+            return existing_promise if existing_promise
+
             # Create promise and queue for batch loading
             Promise.new do |promise|
               queue_for_loading(inputs, promise)
@@ -195,12 +238,33 @@ module Desiru
           when TrueClass, FalseClass then 'bool'
           when Array then 'list'
           when Hash then 'hash'
-          else 'string'
+          else value.class.name.downcase
+          end
+        end
+
+        def check_pending_promise(inputs)
+          # Check if there's already a pending promise for these inputs
+          final_key = loader_key
+          input_key = inputs.sort.to_h.hash
+
+          parent_loader.instance_variable_get(:@mutex).synchronize do
+            parent_loader.instance_variable_get(:@pending_promises)[final_key][input_key]
           end
         end
 
         def queue_for_loading(inputs, promise)
           # Queue the request with the parent DataLoader for batch processing
+          final_key = loader_key
+          input_key = inputs.sort.to_h.hash
+
+          parent_loader.instance_variable_get(:@mutex).synchronize do
+            # Store this promise for future deduplication
+            parent_loader.instance_variable_get(:@pending_promises)[final_key][input_key] = promise
+            parent_loader.instance_variable_get(:@pending_loads)[final_key] << [inputs, promise]
+          end
+        end
+
+        def loader_key
           # Create a key that matches how this loader was registered
           module_name = if @module_class_or_instance.is_a?(Class)
                           @module_class_or_instance.name
@@ -209,19 +273,10 @@ module Desiru
                         end
           loader_key = "#{module_name}:#{batch_size}:#{cache}"
 
-          # Get pending loads and add to queue
-          pending_loads = parent_loader.instance_variable_get(:@pending_loads)
-
           # Find the actual loader key that was used to create this loader
           loaders = parent_loader.instance_variable_get(:@loaders)
           actual_key = loaders.keys.find { |k| loaders[k] == self }
-
-          if actual_key
-            pending_loads[actual_key] << [inputs, promise]
-          else
-            # Fallback: use the generated key
-            pending_loads[loader_key] << [inputs, promise]
-          end
+          actual_key || loader_key
         end
       end
 

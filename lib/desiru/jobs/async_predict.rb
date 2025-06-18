@@ -9,7 +9,7 @@ module Desiru
 
       def perform(job_id, module_class_name, signature_str, inputs, options = {})
         update_status(job_id, 'running', message: 'Initializing module')
-        
+
         module_class = Object.const_get(module_class_name)
 
         # Extract module initialization parameters

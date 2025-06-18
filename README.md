@@ -190,6 +190,74 @@ model = Desiru::Models::Ollama.new(
 cot = Desiru::ChainOfThought.new("question -> answer", model: model)
 ```
 
+### REST API with Grape
+
+Desiru provides Grape integration for building REST APIs:
+
+```ruby
+require 'desiru/api'
+
+# Create API with your modules
+api = Desiru::API::GrapeIntegration.new
+api.register_module('/qa', qa_module, description: 'Question answering')
+api.register_module('/summarize', summarizer, description: 'Text summarization')
+
+# Mount as Rack app
+run api.to_rack_app
+```
+
+Features:
+- **Automatic endpoint generation** from Desiru signatures
+- **Parameter validation** based on signature types
+- **CORS support** built-in
+- **Async support** (when enabled in modules)
+- **Streaming endpoints** for real-time responses
+
+Example endpoints:
+```bash
+# Synchronous request
+curl -X POST http://localhost:9292/api/v1/qa \
+  -H "Content-Type: application/json" \
+  -d '{"question": "What is Ruby?"}'
+
+# Check API health
+curl http://localhost:9292/api/v1/health
+```
+
+See `examples/rest_api.rb` and `examples/rest_api_advanced.rb` for complete examples.
+
+### REST API with Sinatra
+
+Desiru also supports Sinatra for lightweight REST APIs:
+
+```ruby
+require 'desiru/api'
+
+# Create API with Sinatra (lightweight alternative to Grape)
+api = Desiru::API.sinatra do
+  register_module '/qa', qa_module, description: 'Question answering'
+  register_module '/summarize', summarizer, description: 'Text summarization'
+end
+
+# Or explicitly specify the framework
+api = Desiru::API.create(framework: :sinatra) do
+  register_module '/process', processor
+end
+
+# Mount as Rack app
+run api.to_rack_app
+```
+
+Features:
+- **Lightweight** - Minimal dependencies with Sinatra
+- **Same interface** as Grape integration
+- **Full compatibility** with all Desiru module features
+- **CORS support** built-in
+- **Async support** for background processing
+- **Streaming endpoints** for real-time responses
+
+See `examples/sinatra_api.rb` for a complete example.
+
 ### Background Processing
 
 Desiru includes built-in support for asynchronous processing using Sidekiq:
@@ -271,6 +339,82 @@ This approach makes Desiru particularly well-suited for:
 - Batch processing of large datasets
 - Systems requiring job persistence and reliability
 - Deployments that need to scale horizontally
+
+### Database Persistence with Sequel
+
+Desiru includes a comprehensive persistence layer using Sequel for tracking:
+- Module execution history and performance metrics
+- API request/response data for analytics
+- Training examples and optimization results
+- Model performance over time
+
+```ruby
+# Configure persistence
+require 'desiru/persistence'
+
+Desiru::Persistence.database_url = 'postgres://localhost/desiru'
+Desiru::Persistence.connect!
+Desiru::Persistence.migrate!
+
+# Track module executions
+execution = Desiru::Persistence[:module_executions].create_for_module(
+  'TextSummarizer',
+  { text: 'Long article...' }
+)
+
+# Complete with results
+Desiru::Persistence[:module_executions].complete(
+  execution.id,
+  { summary: 'Short summary' },
+  { model: 'gpt-3.5-turbo', tokens: 150 }
+)
+
+# Query performance metrics
+repo = Desiru::Persistence[:module_executions]
+puts "Success rate: #{repo.success_rate('TextSummarizer')}%"
+puts "Average duration: #{repo.average_duration('TextSummarizer')}s"
+
+# Store training examples
+examples = [
+  { inputs: { text: 'Example 1' }, outputs: { summary: 'Summary 1' } },
+  { inputs: { text: 'Example 2' }, outputs: { summary: 'Summary 2' } }
+]
+
+Desiru::Persistence[:training_examples].bulk_create('TextSummarizer', examples)
+
+# Export for training
+data = Desiru::Persistence[:training_examples].export_for_training(
+  'TextSummarizer',
+  format: :dspy
+)
+```
+
+#### API Request Tracking
+
+Automatically track all API requests with the persistence middleware:
+
+```ruby
+# Add persistence to your API
+api = Desiru::API.create do
+  register_module '/summarize', summarizer
+end
+
+# Enable automatic request tracking
+app = api.with_persistence(enabled: true)
+
+# Query API metrics
+requests = Desiru::Persistence[:api_requests]
+puts "Requests per minute: #{requests.requests_per_minute}"
+puts "Average response time: #{requests.average_response_time}s"
+puts "Top endpoints: #{requests.top_paths(5)}"
+```
+
+Features:
+- **Automatic tracking** of all API requests and module executions
+- **Performance analytics** including success rates and response times
+- **Training data management** with dataset splitting and export
+- **Optimization tracking** to measure improvements over time
+- **Multiple database support** via Sequel (PostgreSQL, MySQL, SQLite)
 
 ### ReAct Module (Tool-Using Agents)
 
@@ -360,6 +504,62 @@ results = executor.execute_batch([
   { query: query2, variables: vars2 }
 ])
 ```
+
+### REST API Integration
+
+Desiru provides REST API integration using Grape or Sinatra, allowing you to expose your AI modules as RESTful endpoints:
+
+```ruby
+require 'desiru/api'
+
+# Create modules
+qa_module = Desiru::Modules::Predict.new(
+  'question: string -> answer: string'
+)
+
+summarizer = Desiru::Modules::ChainOfThought.new(
+  'text: string, max_words: int -> summary: string'
+)
+
+# Create REST API
+api = Desiru::API.create(async_enabled: true) do
+  register_module '/qa', qa_module, 
+    description: 'Answer questions'
+  
+  register_module '/summarize', summarizer,
+    description: 'Summarize text'
+end
+
+# Run as Rack application
+run api.to_rack_app
+```
+
+Features include:
+- **Automatic endpoint generation** from Desiru signatures
+- **Parameter validation** based on signature types
+- **Async request support** with job tracking
+- **Streaming responses** via Server-Sent Events
+- **CORS support** out of the box
+- **Extensible middleware** for auth, rate limiting, etc.
+
+#### REST API Examples
+
+```bash
+# Synchronous request
+curl -X POST http://localhost:9292/api/v1/qa \
+  -H "Content-Type: application/json" \
+  -d '{"question": "What is Ruby?"}'
+
+# Async request
+curl -X POST http://localhost:9292/api/v1/summarize \
+  -H "Content-Type: application/json" \
+  -d '{"text": "Long text...", "max_words": 100, "async": true}'
+
+# Check job status
+curl http://localhost:9292/api/v1/jobs/JOB_ID
+```
+
+See `examples/rest_api.rb` for a complete example and `examples/rest_api_advanced.rb` for production features like authentication and rate limiting.
 
 ## Examples
 

@@ -13,51 +13,50 @@ class WeatherTool
   def self.name
     "get_weather"
   end
-  
+
   def self.description
     "Get current weather for a city. Args: city (string)"
   end
-  
+
   def self.call(city:)
     # In a real implementation, this would call a weather API
     # For demo purposes, we'll return mock data
-    temps = { 
-      "Tokyo" => 72, 
-      "New York" => 68, 
+    temps = {
+      "Tokyo" => 72,
+      "New York" => 68,
       "London" => 59,
       "Sydney" => 77
     }
-    
+
     temp = temps[city] || rand(50..85)
     conditions = ["sunny", "partly cloudy", "cloudy", "rainy"].sample
-    
+
     "Current weather in #{city}: #{conditions}, #{temp}°F"
   end
 end
 
-class CalculatorTool  
+class CalculatorTool
   def self.name
     "calculator"
   end
-  
+
   def self.description
     "Perform calculations. Args: expression (string) - a mathematical expression to evaluate"
   end
-  
+
   def self.call(expression:)
     # Safety note: In production, use a proper expression parser
     # This is just for demonstration
-    begin
-      # Only allow basic math operations
-      if expression =~ /^[\d\s\+\-\*\/\(\)\.]+$/
-        result = eval(expression)
-        "Result: #{result}"
-      else
-        "Error: Invalid expression. Only numbers and basic operators allowed."
-      end
-    rescue => e
-      "Error: #{e.message}"
+
+    # Only allow basic math operations
+    if expression =~ %r{^[\d\s\+\-\*/\(\)\.]+$}
+      result = eval(expression)
+      "Result: #{result}"
+    else
+      "Error: Invalid expression. Only numbers and basic operators allowed."
     end
+  rescue StandardError => e
+    "Error: #{e.message}"
   end
 end
 
@@ -65,11 +64,11 @@ class TimeTool
   def self.name
     "get_time"
   end
-  
+
   def self.description
     "Get current time for a timezone. Args: timezone (string) - e.g., 'EST', 'PST', 'GMT'"
   end
-  
+
   def self.call(timezone: "GMT")
     # Simple timezone offset mapping
     offsets = {
@@ -79,10 +78,10 @@ class TimeTool
       "JST" => 9,
       "AEST" => 10
     }
-    
+
     offset = offsets[timezone.upcase] || 0
     time = Time.now.utc + (offset * 3600)
-    
+
     "Current time in #{timezone}: #{time.strftime('%Y-%m-%d %H:%M:%S')}"
   end
 end
@@ -193,7 +192,7 @@ custom_agent = Desiru::Modules::ReAct.new(
 result = custom_agent.call(
   request: "Look up user123 and calculate 10% of their balance"
 )
-puts "Request: Look up user123 and calculate 10% of their balance"  
+puts "Request: Look up user123 and calculate 10% of their balance"
 puts "Response: #{result[:response]}"
 puts "Amount: #{result[:amount]}"
 

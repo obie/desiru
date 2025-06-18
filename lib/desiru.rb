@@ -54,9 +54,14 @@ require_relative 'desiru/optimizers/base'
 require_relative 'desiru/optimizers/bootstrap_few_shot'
 
 # Background jobs
+require_relative 'desiru/async_capable'
+require_relative 'desiru/async_status'
 require_relative 'desiru/jobs/base'
 require_relative 'desiru/jobs/async_predict'
 require_relative 'desiru/jobs/batch_processor'
+
+# API integrations
+require_relative 'desiru/api'
 require_relative 'desiru/jobs/optimizer_job'
 
 # GraphQL integration (optional, requires 'graphql' gem)

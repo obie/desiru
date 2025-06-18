@@ -10,7 +10,7 @@ module Desiru
       def perform(batch_id, module_class_name, signature_str, inputs_array, options = {})
         total_items = inputs_array.size
         update_status(batch_id, 'running', progress: 0, message: "Processing #{total_items} items")
-        
+
         module_class = Object.const_get(module_class_name)
 
         # Extract module initialization parameters
@@ -34,9 +34,9 @@ module Desiru
 
         inputs_array.each_with_index do |inputs, index|
           progress = ((index + 1).to_f / total_items * 100).round
-          update_status(batch_id, 'running', progress: progress, 
-                       message: "Processing item #{index + 1} of #{total_items}")
-          
+          update_status(batch_id, 'running', progress: progress,
+                                             message: "Processing item #{index + 1} of #{total_items}")
+
           result = module_instance.call(**inputs)
           results << {
             index: index,
@@ -53,8 +53,8 @@ module Desiru
         end
 
         final_status = errors.empty? ? 'completed' : 'completed_with_errors'
-        update_status(batch_id, final_status, progress: 100, 
-                     message: "Processed #{results.size} successfully, #{errors.size} failed")
+        update_status(batch_id, final_status, progress: 100,
+                                              message: "Processed #{results.size} successfully, #{errors.size} failed")
 
         store_result(batch_id, {
                        success: errors.empty?,
