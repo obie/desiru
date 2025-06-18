@@ -53,12 +53,17 @@ module Desiru
         Models.send(:remove_const, :Base) if Models.const_defined?(:Base)
         Models.const_set(:Base, base_class)
 
-        # Now load all model classes
-        require_relative 'models/module_execution'
-        require_relative 'models/api_request'
-        require_relative 'models/optimization_result'
-        require_relative 'models/training_example'
-        require_relative 'models/job_result'
+        # Remove existing model constants to force reload
+        %i[ModuleExecution ApiRequest OptimizationResult TrainingExample JobResult].each do |model|
+          Models.send(:remove_const, model) if Models.const_defined?(model)
+        end
+
+        # Now load all model classes - use load instead of require to force re-execution
+        load File.expand_path('models/module_execution.rb', __dir__)
+        load File.expand_path('models/api_request.rb', __dir__)
+        load File.expand_path('models/optimization_result.rb', __dir__)
+        load File.expand_path('models/training_example.rb', __dir__)
+        load File.expand_path('models/job_result.rb', __dir__)
 
         # Setup repositories
         require_relative 'repository'

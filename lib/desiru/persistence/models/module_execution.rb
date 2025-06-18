@@ -5,6 +5,7 @@ module Desiru
     module Models
       # Tracks module execution history
       class ModuleExecution < Base
+        set_dataset :module_executions
         many_to_one :api_request
 
         json_column :inputs

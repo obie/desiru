@@ -5,6 +5,7 @@ module Desiru
     module Models
       # Stores optimization results and metrics
       class OptimizationResult < Base
+        set_dataset :optimization_results
         json_column :parameters
         json_column :metrics
         json_column :best_prompts

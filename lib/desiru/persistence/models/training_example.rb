@@ -5,6 +5,7 @@ module Desiru
     module Models
       # Stores training examples for modules
       class TrainingExample < Base
+        set_dataset :training_examples
         json_column :inputs
         json_column :expected_outputs
         json_column :metadata

@@ -5,6 +5,7 @@ module Desiru
     module Models
       # Tracks REST API requests
       class ApiRequest < Base
+        set_dataset :api_requests
         one_to_many :module_executions
 
         json_column :headers

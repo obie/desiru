@@ -5,6 +5,7 @@ module Desiru
     module Models
       # Model for storing background job results
       class JobResult < Base
+        set_dataset :job_results
 
         # Status constants
         STATUS_PENDING = 'pending'
@@ -16,7 +17,7 @@ module Desiru
         def validate
           super
           validates_presence %i[job_id job_class queue status enqueued_at]
-          validates_unique :job_id if db.table_exists?(:job_results)
+          validates_unique :job_id if db && db.table_exists?(:job_results)
           validates_includes %w[pending processing completed failed], :status
         end
 
