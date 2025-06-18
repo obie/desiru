@@ -2,6 +2,9 @@
 
 A Ruby implementation of [DSPy](https://dspy.ai/), the framework for programming—not prompting—language models. Build sophisticated AI systems with modular, composable code instead of brittle prompt strings.
 
+Note: This project is in its earliest stages of development and experimental. Expect many bugs and breaking changes.
+
+
 ## Overview
 
 Desiru brings the power of DSPy to the Ruby ecosystem, enabling developers to:
@@ -201,8 +204,10 @@ end
 module = Desiru::Predict.new("question -> answer")
 result = module.call_async(question: "What is 2+2?")
 
-# Check status
+# Check status and progress
 result.ready? # => false (still processing)
+result.status # => "running", "completed", "failed", etc.
+result.progress # => 0-100 (percentage complete)
 result.success? # => true/false (when ready)
 
 # Wait for result
