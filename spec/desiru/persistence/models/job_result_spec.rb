@@ -10,7 +10,7 @@ RSpec.describe 'Desiru::Persistence::Models::JobResult', :persistence do
   before(:all) do
     DatabaseHelper.setup_connection(force_new: true)
   end
-  
+
   # Get the actual class after database setup
   let(:model_class) { Desiru::Persistence::Models::JobResult }
 
@@ -126,7 +126,7 @@ RSpec.describe 'Desiru::Persistence::Models::JobResult', :persistence do
     it 'calculates duration when started and finished' do
       started = Time.now
       finished = started + 10.5
-      
+
       job_result = model_class.create(
         job_id: 'duration-test-3',
         job_class: 'TestJob',
@@ -136,7 +136,7 @@ RSpec.describe 'Desiru::Persistence::Models::JobResult', :persistence do
         started_at: started,
         finished_at: finished
       )
-      
+
       expect(job_result.duration).to be_within(0.1).of(10.5)
     end
   end
@@ -173,9 +173,9 @@ RSpec.describe 'Desiru::Persistence::Models::JobResult', :persistence do
 
     it 'updates status, result, and finished_at' do
       result_data = { output: 'test result', score: 0.95 }
-      
+
       job_result.mark_as_completed!(result_data, message: 'Job completed successfully')
-      
+
       expect(job_result.status).to eq('completed')
       expect(job_result.progress).to eq(100)
       expect(job_result.finished_at).not_to be_nil
@@ -198,10 +198,10 @@ RSpec.describe 'Desiru::Persistence::Models::JobResult', :persistence do
 
     it 'updates status and error information' do
       error = StandardError.new('Something went wrong')
-      backtrace = ['line1', 'line2', 'line3']
-      
+      backtrace = %w[line1 line2 line3]
+
       job_result.mark_as_failed!(error, backtrace: backtrace)
-      
+
       expect(job_result.status).to eq('failed')
       expect(job_result.finished_at).not_to be_nil
       expect(job_result.error_message).to eq('Something went wrong')
@@ -219,7 +219,7 @@ RSpec.describe 'Desiru::Persistence::Models::JobResult', :persistence do
         status: 'pending',
         enqueued_at: Time.now
       )
-      
+
       model_class.create(
         job_id: 'scope-processing',
         job_class: 'TestJob',
@@ -228,7 +228,7 @@ RSpec.describe 'Desiru::Persistence::Models::JobResult', :persistence do
         enqueued_at: Time.now,
         started_at: Time.now
       )
-      
+
       model_class.create(
         job_id: 'scope-completed',
         job_class: 'OtherJob',
@@ -238,7 +238,7 @@ RSpec.describe 'Desiru::Persistence::Models::JobResult', :persistence do
         started_at: Time.now - 95,
         finished_at: Time.now - 90
       )
-      
+
       model_class.create(
         job_id: 'scope-failed',
         job_class: 'TestJob',
@@ -249,7 +249,7 @@ RSpec.describe 'Desiru::Persistence::Models::JobResult', :persistence do
         finished_at: Time.now - 190,
         error_message: 'Test error'
       )
-      
+
       model_class.create(
         job_id: 'scope-expired',
         job_class: 'TestJob',
@@ -280,7 +280,7 @@ RSpec.describe 'Desiru::Persistence::Models::JobResult', :persistence do
     it 'orders by recent' do
       # Wait a bit to ensure different timestamps
       sleep 0.01
-      
+
       # Create a new recent job to test ordering
       model_class.create(
         job_id: 'scope-very-recent',
@@ -289,7 +289,7 @@ RSpec.describe 'Desiru::Persistence::Models::JobResult', :persistence do
         status: 'pending',
         enqueued_at: Time.now
       )
-      
+
       recent = model_class.recent(3).map(&:job_id)
       expect(recent.first).to eq('scope-very-recent')
       expect(recent.size).to eq(3)

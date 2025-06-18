@@ -61,8 +61,9 @@ RSpec.describe Desiru::Jobs::RetryStrategies do
   end
 
   describe Desiru::Jobs::RetryStrategies::RetryPolicy do
-    let(:strategy) { Desiru::Jobs::RetryStrategies::FixedDelay.new(delay: 1) }
     subject(:policy) { described_class.new(max_retries: 3, retry_strategy: strategy) }
+
+    let(:strategy) { Desiru::Jobs::RetryStrategies::FixedDelay.new(delay: 1) }
 
     describe '#retriable?' do
       context 'with retriable_errors specified' do
@@ -132,7 +133,7 @@ RSpec.describe Desiru::Jobs::RetryStrategies do
           max_retries: 5,
           non_retriable_errors: [ArgumentError]
         )
-        
+
         expect(policy.should_retry?(0, ArgumentError.new)).to be false
       end
     end

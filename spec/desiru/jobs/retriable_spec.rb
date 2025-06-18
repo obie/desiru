@@ -16,17 +16,15 @@ RSpec.describe Desiru::Jobs::Retriable do
     )
 
     # Define the base perform method
-    def perform_base(job_id, should_fail = false, error_class = StandardError)
-      if should_fail
-        raise error_class, "Test error"
-      else
-        "Success"
-      end
+    def perform_base(_job_id, should_fail = false, error_class = StandardError)
+      raise error_class, "Test error" if should_fail
+
+      "Success"
     end
 
     # Alias it properly for the retriable mixin
-    alias_method :perform_without_retries, :perform_base
-    alias_method :perform, :perform_with_retries
+    alias perform_without_retries perform_base
+    alias perform perform_with_retries
   end
 
   describe 'retry behavior' do
@@ -39,10 +37,10 @@ RSpec.describe Desiru::Jobs::Retriable do
     it 'schedules retry for retriable errors' do
       expect(Desiru.logger).to receive(:warn).with(/Retrying TestRetriableJob/)
       expect(TestRetriableJob).to receive(:perform_in).with(0.1, 'test-123', true, StandardError)
-      
+
       # Allow the job to handle persistence but mock it
       allow(job).to receive(:persistence_enabled?).and_return(false)
-      
+
       # The method doesn't re-raise after scheduling retry
       result = job.perform('test-123', true, StandardError)
       expect(result).to be_nil
@@ -51,11 +49,11 @@ RSpec.describe Desiru::Jobs::Retriable do
     it 'does not retry non-retriable errors' do
       expect(TestRetriableJob).not_to receive(:perform_in)
       expect(Desiru.logger).to receive(:error).with(/failed after 0 retries/)
-      
+
       # Allow the job to handle persistence but mock it
       allow(job).to receive(:persistence_enabled?).and_return(false)
       allow(job).to receive(:persist_error_to_db)
-      
+
       expect { job.perform('test-123', true, ArgumentError) }
         .to raise_error(ArgumentError)
     end
@@ -82,7 +80,7 @@ RSpec.describe Desiru::Jobs::Retriable do
   describe Desiru::Jobs::RetriableJob do
     it 'has default retry configuration' do
       policy = described_class.retry_policy
-      
+
       expect(policy.max_retries).to eq(5)
       expect(policy.retry_strategy).to be_a(Desiru::Jobs::RetryStrategies::ExponentialBackoff)
       expect(policy.retriable?(StandardError.new)).to be true

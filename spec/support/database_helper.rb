@@ -34,12 +34,12 @@ module DatabaseHelper
 
           # Connect to in-memory database - each gets its own instance
           Desiru::Persistence::Database.connect('sqlite::memory:')
-          
+
           # Ensure Sequel::Model has the correct database
           Sequel::Model.db = Desiru::Persistence::Database.connection
-          
+
           Desiru::Persistence::Database.migrate!
-          
+
           # Debug: Check tables after migration
           if ENV['DEBUG_DB']
             tables = Desiru::Persistence::Database.connection.tables
