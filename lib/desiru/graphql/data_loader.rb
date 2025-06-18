@@ -25,30 +25,30 @@ module Desiru
           next if batch.empty?
 
           loader = @loaders[loader_key]
-          next unless loader  # Skip if loader not found
-          
+          next unless loader # Skip if loader not found
+
           inputs_array = batch.map(&:first)
-          
+
           # Create a map to preserve input order
           results_map = {}
-          
+
           # Process the batch through the loader
           begin
             results = loader.load_batch(inputs_array)
             inputs_array.each_with_index do |inputs, idx|
               results_map[inputs.object_id] = results[idx]
             end
-          rescue => e
+          rescue StandardError => e
             # Mark all promises as rejected on error
             inputs_array.each do |inputs|
               results_map[inputs.object_id] = { error: e }
             end
           end
-          
+
           # Fulfill or reject promises with results
           batch.each do |inputs, promise|
             result = results_map[inputs.object_id]
-            
+
             if result.is_a?(Hash) && result[:error]
               promise.reject(result[:error])
             else
@@ -64,7 +64,7 @@ module Desiru
       def clear!
         @results_cache.clear
         @pending_loads.clear
-        @loaders.values.each(&:clear_cache!)
+        @loaders.each_value(&:clear_cache!)
       end
 
       private
@@ -97,10 +97,10 @@ module Desiru
           return load_from_cache(inputs_array) if cache && all_cached?(inputs_array)
 
           results = process_batch(inputs_array)
-          
+
           # Cache results if enabled
           cache_results(inputs_array, results) if cache
-          
+
           results
         end
 
@@ -132,7 +132,7 @@ module Desiru
                             else
                               @module_class_or_instance
                             end
-          
+
           if module_instance.respond_to?(:batch_forward)
             # If module supports batch processing
             module_instance.batch_forward(inputs_array)
@@ -167,11 +167,10 @@ module Desiru
           inputs.sort.to_h.hash
         end
 
-
         def create_module_instance(sample_inputs)
           # Infer signature from inputs
           signature = infer_signature(sample_inputs)
-          
+
           # Get the module class
           if @module_class_or_instance.is_a?(Class)
             @module_class_or_instance.new(signature)
@@ -200,7 +199,6 @@ module Desiru
           end
         end
 
-
         def queue_for_loading(inputs, promise)
           # Queue the request with the parent DataLoader for batch processing
           # Create a key that matches how this loader was registered
@@ -210,14 +208,14 @@ module Desiru
                           @module_class_or_instance.class.name
                         end
           loader_key = "#{module_name}:#{batch_size}:#{cache}"
-          
+
           # Get pending loads and add to queue
           pending_loads = parent_loader.instance_variable_get(:@pending_loads)
-          
+
           # Find the actual loader key that was used to create this loader
           loaders = parent_loader.instance_variable_get(:@loaders)
           actual_key = loaders.keys.find { |k| loaders[k] == self }
-          
+
           if actual_key
             pending_loads[actual_key] << [inputs, promise]
           else
@@ -236,24 +234,24 @@ module Desiru
           @value = nil
           @error = nil
           @callbacks = []
-          block.call(self) if block
+          block&.call(self)
         end
 
         def fulfill(value)
           callbacks_to_run = nil
-          
+
           @mutex.synchronize do
             return if @fulfilled
-            
+
             @value = value
             @fulfilled = true
             callbacks_to_run = @callbacks.dup
             @callbacks.clear
-            
+
             # Signal all waiting threads
             @condition.broadcast
           end
-          
+
           # Run callbacks outside the mutex to avoid deadlock
           callbacks_to_run&.each { |cb| cb.call(value) }
         end
@@ -261,11 +259,11 @@ module Desiru
         def reject(error)
           @mutex.synchronize do
             return if @fulfilled
-            
+
             @error = error
             @fulfilled = true
             @callbacks.clear
-            
+
             # Signal all waiting threads
             @condition.broadcast
           end
@@ -274,7 +272,7 @@ module Desiru
         def then(&block)
           run_immediately = false
           value_to_pass = nil
-          
+
           @mutex.synchronize do
             if @fulfilled && !@error
               run_immediately = true
@@ -283,10 +281,10 @@ module Desiru
               @callbacks << block
             end
           end
-          
+
           # Run callback outside mutex if already fulfilled
           block.call(value_to_pass) if run_immediately
-          
+
           self
         end
 
@@ -297,15 +295,16 @@ module Desiru
               until @fulfilled
                 remaining = end_time - Time.now
                 break if remaining <= 0
+
                 @condition.wait(@mutex, remaining)
               end
             else
               @condition.wait(@mutex) until @fulfilled
             end
-            
+
             raise @error if @error
             raise "Promise not yet fulfilled" unless @fulfilled
-            
+
             @value
           end
         end

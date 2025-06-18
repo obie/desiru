@@ -56,7 +56,7 @@ module Desiru
       # Execute with automatic lazy loading support
       def execute_with_lazy_loading(query_string, variables: {}, context: {}, operation_name: nil)
         context[:data_loader] = @data_loader
-        
+
         # Use GraphQL's built-in lazy execution
         @schema.execute(
           query_string,
@@ -84,18 +84,16 @@ module Desiru
 
         # Always perform loads at least once to ensure batch processing
         @data_loader.perform_loads
-        
+
         # Then perform any additional pending loads
-        while has_pending_loads?
-          @data_loader.perform_loads
-        end
+        @data_loader.perform_loads while has_pending_loads?
 
         result
       end
 
       def has_pending_loads?
         pending_loads = @data_loader.instance_variable_get(:@pending_loads)
-        pending_loads && pending_loads.any? { |_, batch| !batch.empty? }
+        pending_loads&.any? { |_, batch| !batch.empty? }
       end
     end
 
@@ -112,12 +110,10 @@ module Desiru
             # Create a lazy resolver that integrates with DataLoader
             ::GraphQL::Execution::Lazy.new do
               data_loader = context[:data_loader]
-              
+
               # Ensure batch loads are performed before accessing value
-              if data_loader && !result.fulfilled?
-                data_loader.perform_loads
-              end
-              
+              data_loader.perform_loads if data_loader && !result.fulfilled?
+
               result.value
             end
           end

@@ -49,22 +49,17 @@ module Desiru
       # Generate a GraphQL schema from registered signatures
       def generate_schema
         # Always rebuild if signatures have changed
-        if @schema_class && @last_signature_count == @signatures.size
-          return @schema_class
-        end
-        
+        return @schema_class if @schema_class && @last_signature_count == @signatures.size
+
         @last_signature_count = @signatures.size
         query_class = build_query_type
-        data_loader = @data_loader
 
-        modules = @modules
-        
         @schema_class = Class.new(::GraphQL::Schema) do
           query(query_class) if query_class
-          
+
           # Enable GraphQL's built-in dataloader
           use ::GraphQL::Dataloader
-          
+
           # Enable lazy execution for batch loading
           lazy_resolve(::GraphQL::Execution::Lazy, :value)
         end
@@ -85,7 +80,7 @@ module Desiru
 
           query_fields.each do |field_name, field_def|
             # Add field directly without resolver class
-            field field_name, field_def[:type], 
+            field field_name, field_def[:type],
                   null: false,
                   description: field_def[:description] do
               # Add arguments
@@ -93,15 +88,15 @@ module Desiru
                 argument arg_name, arg_def[:type], required: arg_def[:required]
               end
             end
-            
+
             # Define the resolver method for this field
             define_method field_name do |**args|
               # Use GraphQL's dataloader if the module supports batch processing
               module_instance = field_def[:module_instance]
-              if module_instance && module_instance.respond_to?(:batch_forward)
+              if module_instance.respond_to?(:batch_forward)
                 # Get the dataloader for this request
                 dataloader = context.dataloader
-                
+
                 # Load through the dataloader
                 dataloader.with(Desiru::GraphQL::ModuleLoader, field_name, field_def[:modules]).load(args)
               else
@@ -148,7 +143,7 @@ module Desiru
       def build_output_type(signature)
         # Create a stable cache key based on signature structure
         cache_key = generate_type_cache_key('Output', signature.output_fields)
-        
+
         # Check global cache first
         @@cache_mutex.synchronize do
           return @@global_type_cache[cache_key] if @@global_type_cache[cache_key]
@@ -178,34 +173,33 @@ module Desiru
         @@cache_mutex.synchronize do
           @@global_type_cache[cache_key] = output_type
         end
-        
+
         output_type
       end
 
       def graphql_type_for_field(field)
-        base_type = case field.type
-                    when :string
-                      ::GraphQL::Types::String
-                    when :int, :integer
-                      ::GraphQL::Types::Int
-                    when :float
-                      ::GraphQL::Types::Float
-                    when :bool, :boolean
-                      ::GraphQL::Types::Boolean
-                    when :list
-                      # Handle list types
-                      element_type = graphql_type_for_element(field.element_type)
-                      [element_type]
-                    when :literal
-                      # Create enum type for literal values
-                      create_enum_type(field)
-                    else
-                      ::GraphQL::Types::String
-                    end
+        case field.type
+        when :string
+          ::GraphQL::Types::String
+        when :int, :integer
+          ::GraphQL::Types::Int
+        when :float
+          ::GraphQL::Types::Float
+        when :bool, :boolean
+          ::GraphQL::Types::Boolean
+        when :list
+          # Handle list types
+          element_type = graphql_type_for_element(field.element_type)
+          [element_type]
+        when :literal
+          # Create enum type for literal values
+          create_enum_type(field)
+        else
+          ::GraphQL::Types::String
+        end
 
         # Return base type without non-null wrapping
         # The null property is handled at the field definition level
-        base_type
       end
 
       def graphql_type_for_element(element_type)
@@ -233,7 +227,7 @@ module Desiru
         # Extract literal values from the field's validator
         values = extract_literal_values(field)
         cache_key = "Enum:#{field.name}:#{values.sort.join(',')}"
-        
+
         # Check global cache first
         @@cache_mutex.synchronize do
           return @@global_type_cache[cache_key] if @@global_type_cache[cache_key]
@@ -254,13 +248,13 @@ module Desiru
         @@cache_mutex.synchronize do
           @@global_type_cache[cache_key] = enum_type
         end
-        
+
         enum_type
       end
 
       def create_enum_type_from_values(values)
         cache_key = "LiteralEnum:#{values.sort.join(',')}"
-        
+
         # Check global cache first
         @@cache_mutex.synchronize do
           return @@global_type_cache[cache_key] if @@global_type_cache[cache_key]
@@ -280,7 +274,7 @@ module Desiru
         @@cache_mutex.synchronize do
           @@global_type_cache[cache_key] = enum_type
         end
-        
+
         enum_type
       end
 
@@ -300,22 +294,20 @@ module Desiru
         inputs = transform_graphql_args(args)
 
         # Get data loader from context if available
-        data_loader = context[:data_loader] || @data_loader
+        context[:data_loader] || @data_loader
 
         # Check if we have a registered module for this operation
         if @modules[operation_name]
           module_instance = @modules[operation_name]
-          
+
           # Direct execution - batching will be handled by the executor
-          result = module_instance.call(inputs)
-          transform_module_result(result)
         else
           # Fallback: create a module instance on the fly
           module_class = infer_module_class(signature)
           module_instance = module_class.new(signature)
-          result = module_instance.call(inputs)
-          transform_module_result(result)
         end
+        result = module_instance.call(inputs)
+        transform_module_result(result)
       end
 
       def transform_graphql_args(args)
@@ -354,7 +346,7 @@ module Desiru
         # Remove trailing '?' for optional fields
         clean_name = field_name.to_s.gsub('?', '')
         parts = clean_name.split('_')
-        parts[0] + parts[1..-1].map(&:capitalize).join
+        parts[0] + parts[1..].map(&:capitalize).join
       end
 
       def generate_type_cache_key(prefix, fields)
@@ -362,7 +354,7 @@ module Desiru
         field_signatures = fields.map do |name, field|
           "#{name}:#{field.type}:#{field.optional}:#{field.element_type if field.respond_to?(:element_type)}"
         end.sort
-        
+
         "#{prefix}:#{field_signatures.join('|')}"
       end
     end

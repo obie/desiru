@@ -33,26 +33,26 @@ module Desiru
 
       def fetch(args_array)
         module_instance = @modules[@operation_name.to_s] || @modules[@operation_name.to_sym]
-        
+
         raise "Module not found for operation: #{@operation_name}" unless module_instance
-        
+
         # Transform GraphQL arguments to snake_case
         transformed_args = args_array.map { |args| transform_graphql_args(args) }
-        
+
         results = if module_instance.respond_to?(:batch_forward)
-          # Batch process all requests
-          module_instance.batch_forward(transformed_args)
-        else
-          # Fall back to individual processing
-          transformed_args.map { |args| module_instance.call(args) }
-        end
-        
+                    # Batch process all requests
+                    module_instance.batch_forward(transformed_args)
+                  else
+                    # Fall back to individual processing
+                    transformed_args.map { |args| module_instance.call(args) }
+                  end
+
         # Transform results back to camelCase
         results.map { |result| transform_module_result(result) }
       end
-      
+
       private
-      
+
       def transform_graphql_args(args)
         # Convert camelCase keys to snake_case
         args.transform_keys do |key|
@@ -64,7 +64,7 @@ module Desiru
           end
         end
       end
-      
+
       def transform_module_result(result)
         # Convert ModuleResult to hash with camelCase keys
         if result.respond_to?(:to_h)
@@ -73,12 +73,12 @@ module Desiru
           result
         end
       end
-      
+
       def camelcase_field_name(field_name)
         # Convert snake_case to camelCase
         clean_name = field_name.to_s.gsub('?', '')
         parts = clean_name.split('_')
-        parts[0] + parts[1..-1].map(&:capitalize).join
+        parts[0] + parts[1..].map(&:capitalize).join
       end
     end
   end
