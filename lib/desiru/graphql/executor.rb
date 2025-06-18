@@ -53,19 +53,49 @@ module Desiru
         results
       end
 
+      # Execute with automatic lazy loading support
+      def execute_with_lazy_loading(query_string, variables: {}, context: {}, operation_name: nil)
+        context[:data_loader] = @data_loader
+        
+        # Use GraphQL's built-in lazy execution
+        @schema.execute(
+          query_string,
+          variables: variables,
+          context: context,
+          operation_name: operation_name
+        ) do |schema_query|
+          # Configure lazy loading behavior
+          schema_query.after_lazy_resolve do |value|
+            # Trigger batch loading after each lazy resolution
+            @data_loader.perform_loads
+            value
+          end
+        end
+      end
+
       private
 
       def batch_execute
         # Start batch loading context
         @data_loader.clear! if @data_loader.respond_to?(:clear!)
 
-        # Execute the GraphQL queries
+        # Execute the GraphQL queries with lazy loading support
         result = yield
 
-        # Perform all pending batch loads
-        @data_loader.perform_loads if @data_loader.respond_to?(:perform_loads)
+        # Always perform loads at least once to ensure batch processing
+        @data_loader.perform_loads
+        
+        # Then perform any additional pending loads
+        while has_pending_loads?
+          @data_loader.perform_loads
+        end
 
         result
+      end
+
+      def has_pending_loads?
+        pending_loads = @data_loader.instance_variable_get(:@pending_loads)
+        pending_loads && pending_loads.any? { |_, batch| !batch.empty? }
       end
     end
 
@@ -79,8 +109,15 @@ module Desiru
           if result.fulfilled?
             result.value
           else
-            # Create a lazy resolver
+            # Create a lazy resolver that integrates with DataLoader
             ::GraphQL::Execution::Lazy.new do
+              data_loader = context[:data_loader]
+              
+              # Ensure batch loads are performed before accessing value
+              if data_loader && !result.fulfilled?
+                data_loader.perform_loads
+              end
+              
               result.value
             end
           end
