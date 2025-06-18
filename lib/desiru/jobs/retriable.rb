@@ -27,7 +27,7 @@ module Desiru
           policy_options[:retry_strategy] = strategy if strategy
           policy_options[:retriable_errors] = retriable if retriable
           policy_options[:non_retriable_errors] = non_retriable if non_retriable
-          
+
           @retry_policy = RetryStrategies::RetryPolicy.new(**policy_options)
         end
       end
@@ -44,26 +44,27 @@ module Desiru
           end
 
           perform_without_retries(*args)
-        rescue => error
+        rescue StandardError => e
           policy = self.class.retry_policy
 
-          if policy.should_retry?(retry_count, error)
+          if policy.should_retry?(retry_count, e)
             retry_count += 1
             delay = policy.retry_delay(retry_count)
-            
-            log_retry(error, retry_count, delay)
-            
+
+            log_retry(e, retry_count, delay)
+
             # Schedule retry with delay
             self.class.perform_in(delay, *args)
+
+            # Don't re-raise - we've scheduled a retry
+            nil
           else
             # Max retries exceeded or non-retriable error
-            log_retry_failure(error, retry_count)
-            
+            log_retry_failure(e, retry_count)
+
             # Mark job as failed if persistence is enabled
-            if job_id && respond_to?(:persist_error_to_db)
-              persist_error_to_db(job_id, error, error.backtrace)
-            end
-            
+            persist_error_to_db(job_id, e, e.backtrace) if job_id && respond_to?(:persist_error_to_db)
+
             # Re-raise to let Sidekiq handle it
             raise
           end
@@ -100,8 +101,8 @@ module Desiru
       include Retriable
 
       # Alias the original perform method
-      alias_method :perform_without_retries, :perform
-      alias_method :perform, :perform_with_retries
+      alias perform_without_retries perform
+      alias perform perform_with_retries
 
       # Default configuration with exponential backoff
       configure_retries(

@@ -18,11 +18,13 @@ module Desiru
         # Calculate delay for the given retry attempt
         def delay_for(retry_count)
           delay = [base_delay * (multiplier**retry_count), max_delay].min
-          
+
           if jitter
             # Add random jitter (±25%) to prevent thundering herd
             jitter_amount = delay * 0.25
-            delay + (rand * 2 * jitter_amount - jitter_amount)
+            jittered_delay = delay + ((rand * 2 * jitter_amount) - jitter_amount)
+            # Ensure we don't exceed max_delay even with jitter
+            [jittered_delay, max_delay].min
           else
             delay
           end
@@ -76,12 +78,11 @@ module Desiru
         # Check if error is retriable
         def retriable?(error)
           # If non-retriable errors are specified, check those first
-          if non_retriable_errors
-            return false if non_retriable_errors.any? { |klass| error.is_a?(klass) }
-          end
+          return false if non_retriable_errors&.any? { |klass| error.is_a?(klass) }
 
           # If retriable errors are specified, only retry those
           if retriable_errors
+            # Only retry if the error matches one of the specified retriable errors
             retriable_errors.any? { |klass| error.is_a?(klass) }
           else
             # By default, retry all errors except non-retriable ones
@@ -117,19 +118,18 @@ module Desiru
         def call
           case @state
           when :open
-            if Time.now - @last_failure_time >= timeout
-              @state = :half_open
-              @half_open_count = 0
-            else
-              raise CircuitOpenError, "Circuit breaker is open"
-            end
+            raise CircuitOpenError, "Circuit breaker is open" unless Time.now - @last_failure_time >= timeout
+
+            @state = :half_open
+            @half_open_count = 0
+
           end
 
           begin
             result = yield
             on_success
             result
-          rescue => e
+          rescue StandardError => e
             on_failure
             raise e
           end
@@ -156,9 +156,7 @@ module Desiru
 
           case @state
           when :closed
-            if @failure_count >= failure_threshold
-              @state = :open
-            end
+            @state = :open if @failure_count >= failure_threshold
           when :half_open
             @state = :open
           end
