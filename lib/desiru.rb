@@ -47,6 +47,7 @@ require_relative 'desiru/models/raix_adapter'
 require_relative 'desiru/modules/predict'
 require_relative 'desiru/modules/chain_of_thought'
 require_relative 'desiru/modules/retrieve'
+require_relative 'desiru/modules/react'
 
 # Optimizers
 require_relative 'desiru/optimizers/base'
