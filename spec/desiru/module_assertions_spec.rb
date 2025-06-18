@@ -8,10 +8,10 @@ RSpec.describe 'Module with Assertions' do
   class TestAssertionModule < Desiru::Module
     def forward(input:, confidence: nil)
       result = { output: "Processed: #{input}", confidence: confidence || 0.5 }
-      
+
       # Use assertion to enforce confidence threshold
       Desiru.assert(result[:confidence] > 0.7, "Confidence too low: #{result[:confidence]}")
-      
+
       result
     end
   end
@@ -20,17 +20,17 @@ RSpec.describe 'Module with Assertions' do
   class TestSuggestionModule < Desiru::Module
     def forward(input:, sources: nil)
       result = { output: "Processed: #{input}", sources: sources || [] }
-      
+
       # Use suggestion for optional validation
       Desiru.suggest(result[:sources].any?, "No sources provided")
-      
+
       result
     end
   end
 
   let(:model) { instance_double('Model', complete: { text: 'response' }) }
   let(:logger) { instance_double(Logger, warn: nil, error: nil) }
-  
+
   before do
     allow(Desiru.configuration).to receive(:logger).and_return(logger)
     Desiru::Assertions.configuration.max_assertion_retries = 3
@@ -52,7 +52,7 @@ RSpec.describe 'Module with Assertions' do
     context 'when assertion fails' do
       it 'retries the specified number of times' do
         expect(module_instance).to receive(:forward).exactly(4).times.and_call_original
-        
+
         expect do
           module_instance.call(input: 'test', confidence: 0.5)
         end.to raise_error(Desiru::Assertions::AssertionError, 'Confidence too low: 0.5')
@@ -61,19 +61,17 @@ RSpec.describe 'Module with Assertions' do
       it 'logs retry attempts' do
         expect(logger).to receive(:warn).with(/\[ASSERTION RETRY\]/).exactly(3).times
         expect(logger).to receive(:error).with(/\[ASSERTION FAILED\]/).once
-        
+
         expect do
           module_instance.call(input: 'test', confidence: 0.5)
         end.to raise_error(Desiru::Assertions::AssertionError)
       end
 
       it 'includes module context in the error' do
-        begin
-          module_instance.call(input: 'test', confidence: 0.5)
-        rescue Desiru::Assertions::AssertionError => e
-          expect(e.module_name).to eq('TestAssertionModule')
-          expect(e.retry_count).to eq(3)
-        end
+        module_instance.call(input: 'test', confidence: 0.5)
+      rescue Desiru::Assertions::AssertionError => e
+        expect(e.module_name).to eq('TestAssertionModule')
+        expect(e.retry_count).to eq(3)
       end
     end
 
@@ -84,7 +82,7 @@ RSpec.describe 'Module with Assertions' do
 
       it 'does not retry on assertion failure' do
         expect(module_instance).to receive(:forward).once.and_call_original
-        
+
         expect do
           module_instance.call(input: 'test', confidence: 0.5)
         end.to raise_error(Desiru::Assertions::AssertionError)
@@ -99,7 +97,7 @@ RSpec.describe 'Module with Assertions' do
     context 'when suggestion passes' do
       it 'returns the result without logging' do
         expect(logger).not_to receive(:warn)
-        
+
         result = module_instance.call(input: 'test', sources: ['source1'])
         expect(result.output).to eq('Processed: test')
         expect(result[:sources]).to eq(['source1'])
@@ -109,7 +107,7 @@ RSpec.describe 'Module with Assertions' do
     context 'when suggestion fails' do
       it 'logs a warning but continues execution' do
         expect(logger).to receive(:warn).with('[SUGGESTION] No sources provided')
-        
+
         result = module_instance.call(input: 'test', sources: [])
         expect(result.output).to eq('Processed: test')
         expect(result[:sources]).to eq([])
@@ -117,7 +115,7 @@ RSpec.describe 'Module with Assertions' do
 
       it 'does not trigger retries' do
         expect(module_instance).to receive(:forward).once.and_call_original
-        
+
         module_instance.call(input: 'test', sources: [])
       end
     end
@@ -131,13 +129,13 @@ RSpec.describe 'Module with Assertions' do
           confidence: confidence || 0.5,
           sources: sources || []
         }
-        
+
         # Hard assertion
         Desiru.assert(result[:confidence] > 0.7, "Confidence too low")
-        
+
         # Soft suggestion
         Desiru.suggest(result[:sources].any?, "Consider adding sources")
-        
+
         result
       end
     end
@@ -147,7 +145,7 @@ RSpec.describe 'Module with Assertions' do
 
     it 'handles both assertions and suggestions correctly' do
       expect(logger).to receive(:warn).with('[SUGGESTION] Consider adding sources')
-      
+
       result = module_instance.call(input: 'test', confidence: 0.8, sources: [])
       expect(result.output).to eq('Processed: test')
     end
@@ -168,10 +166,10 @@ RSpec.describe 'Module with Assertions' do
 
       signature = Desiru::Signature.new('input:str, confidence:float -> output:str, confidence:float')
       module_instance = TestAssertionModule.new(signature, model: model)
-      
+
       # Should retry only 2 times (3 total attempts)
       expect(module_instance).to receive(:forward).exactly(3).times.and_call_original
-      
+
       expect do
         module_instance.call(input: 'test', confidence: 0.5)
       end.to raise_error(Desiru::Assertions::AssertionError)

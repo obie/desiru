@@ -38,6 +38,12 @@ module Desiru
       def [](name)
         repositories[name] || raise("Repository #{name} not found")
       end
+
+      def enabled?
+        !Database.connection.nil?
+      rescue StandardError
+        false
+      end
     end
   end
 end

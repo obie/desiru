@@ -62,24 +62,6 @@ module Desiru
         @schema_class
       end
 
-      private
-
-      def build_query_type
-        return nil if @signatures.empty?
-
-        query_fields = build_query_fields
-        query_class_builder = self
-
-        Class.new(::GraphQL::Schema::Object) do
-          graphql_name 'Query'
-          description 'Desiru query operations'
-
-          query_fields.each do |field_name, field_def|
-            query_class_builder.add_query_field(self, field_name, field_def)
-          end
-        end
-      end
-
       def add_query_field(query_class, field_name, field_def)
         # Add field directly without resolver class
         query_class.field field_name, field_def[:type],
@@ -105,6 +87,24 @@ module Desiru
           else
             # Direct execution
             field_def[:resolver].call(args, context)
+          end
+        end
+      end
+
+      private
+
+      def build_query_type
+        return nil if @signatures.empty?
+
+        query_fields = build_query_fields
+        query_class_builder = self
+
+        Class.new(::GraphQL::Schema::Object) do
+          graphql_name 'Query'
+          description 'Desiru query operations'
+
+          query_fields.each do |field_name, field_def|
+            query_class_builder.add_query_field(self, field_name, field_def)
           end
         end
       end

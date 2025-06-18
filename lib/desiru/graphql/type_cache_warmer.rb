@@ -8,15 +8,41 @@ module Desiru
 
       # Pre-generate commonly used types to improve cold-start performance
       def warm_common_types!
-        # Common scalar field combinations
-        common_field_sets = [
+        warm_common_output_types!
+        warm_common_enums!
+      end
+
+      # Get statistics about the type cache
+      def cache_stats
+        cache = TypeBuilder.instance_variable_get(:@type_cache)
+        mutex = TypeBuilder.instance_variable_get(:@cache_mutex)
+
+        mutex.synchronize do
+          {
+            total_types: cache.size,
+            output_types: cache.keys.count { |k| k.start_with?('Output:') },
+            enum_types: cache.keys.count { |k| k.include?('Enum') },
+            cache_keys: cache.keys
+          }
+        end
+      end
+
+      private
+
+      def warm_common_output_types!
+        common_field_sets.each do |fields|
+          signature = create_mock_signature(fields)
+          TypeBuilder.build_output_type(signature)
+        end
+      end
+
+      def common_field_sets # rubocop:disable Metrics/MethodLength
+        [
           # Single field types
           { id: create_field(:string, false) },
           { result: create_field(:string, true) },
           { output: create_field(:string, true) },
           { message: create_field(:string, true) },
-          
-          # Common output combinations
           {
             id: create_field(:string, false),
             result: create_field(:string, true),
@@ -33,33 +59,7 @@ module Desiru
             data: create_field(:string, true)
           }
         ]
-
-        # Pre-generate output types for common field combinations
-        common_field_sets.each do |fields|
-          signature = create_mock_signature(fields)
-          TypeBuilder.build_output_type(signature)
-        end
-
-        # Pre-generate common enum types
-        warm_common_enums!
       end
-
-      # Get statistics about the type cache
-      def cache_stats
-        cache = TypeBuilder.instance_variable_get(:@type_cache)
-        mutex = TypeBuilder.instance_variable_get(:@cache_mutex)
-        
-        mutex.synchronize do
-          {
-            total_types: cache.size,
-            output_types: cache.keys.count { |k| k.start_with?('Output:') },
-            enum_types: cache.keys.count { |k| k.include?('Enum') },
-            cache_keys: cache.keys
-          }
-        end
-      end
-
-      private
 
       def create_field(type, optional)
         Struct.new(:type, :optional, :description).new(type, optional, nil)

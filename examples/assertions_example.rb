@@ -39,23 +39,23 @@ class FactChecker < Desiru::Module
       { statement: "Cats can fly", confidence: 0.1 },
       { statement: "The Earth is flat", confidence: 0.05 }
     ]
-    
+
     # Find confidence for the statement
     fact = facts.find { |f| f[:statement].downcase == statement.downcase }
     confidence = fact ? fact[:confidence] : rand(0.3..0.9)
-    
+
     result = {
       statement: statement,
       confidence: confidence,
       verified: confidence > 0.7
     }
-    
+
     # Assert high confidence for fact verification
     Desiru.assert(
       result[:confidence] > 0.7,
       "Low confidence score: #{result[:confidence]}. Cannot verify statement."
     )
-    
+
     result
   end
 end
@@ -69,29 +69,29 @@ class CodeReviewer < Desiru::Module
       issues: [],
       suggestions: []
     }
-    
+
     # Simulate code analysis
     if code.include?('TODO')
       review[:issues] << "Found TODO comment"
       review[:suggestions] << "Consider creating a ticket for TODO items"
     end
-    
+
     if language == 'ruby' && !code.include?('frozen_string_literal')
       review[:suggestions] << "Add frozen_string_literal pragma"
     end
-    
+
     # Suggest having tests
     Desiru.suggest(
       code.include?('test') || code.include?('spec'),
       "No tests found in the code. Consider adding test coverage."
     )
-    
+
     # Suggest documentation
     Desiru.suggest(
       code.include?('#') || code.include?('/**'),
       "No comments found. Consider adding documentation."
     )
-    
+
     review[:score] = 100 - (review[:issues].length * 10)
     review
   end
@@ -106,7 +106,7 @@ class DataValidator < Desiru::Module
       errors: [],
       warnings: []
     }
-    
+
     # Required field assertion
     schema[:required]&.each do |field|
       if !data.key?(field) || data[field].nil?
@@ -114,13 +114,13 @@ class DataValidator < Desiru::Module
         validation[:errors] << "Missing required field: #{field}"
       end
     end
-    
+
     # Assert data is valid
     Desiru.assert(
       validation[:valid],
       "Data validation failed: #{validation[:errors].join(', ')}"
     )
-    
+
     # Suggest best practices
     if data.is_a?(Hash)
       Desiru.suggest(
@@ -128,18 +128,18 @@ class DataValidator < Desiru::Module
         "Consider using symbols for hash keys for better performance"
       )
     end
-    
+
     # Check data types (suggestions)
     schema[:types]&.each do |field, expected_type|
       next unless data.key?(field)
-      
+
       actual_type = data[field].class
       Desiru.suggest(
         actual_type == expected_type,
         "Field '#{field}' is #{actual_type}, expected #{expected_type}"
       )
     end
-    
+
     validation
   end
 end
@@ -194,7 +194,7 @@ puts "4. Data Validator - Complete Example:"
 validator = DataValidator.new('data:dict, schema:dict -> data:dict, valid:bool, errors:list, warnings:list')
 
 schema = {
-  required: [:name, :email],
+  required: %i[name email],
   types: {
     name: String,
     email: String,
@@ -217,7 +217,7 @@ end
 puts "  b) Invalid data (missing required field):"
 begin
   invalid_data = { name: "Jane Doe", age: "twenty-five" }
-  result = validator.call(data: invalid_data, schema: schema)
+  validator.call(data: invalid_data, schema: schema)
   puts "    ✓ Validation passed"
 rescue Desiru::Assertions::AssertionError => e
   puts "    ✗ Validation failed: #{e.message}"

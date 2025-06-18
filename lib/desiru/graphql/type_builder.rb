@@ -2,6 +2,7 @@
 
 require 'graphql'
 require_relative 'enum_builder'
+require_relative 'type_cache_warmer'
 
 module Desiru
   module GraphQL
@@ -72,7 +73,6 @@ module Desiru
         end
       end
 
-
       private
 
       def build_field_definitions(fields)
@@ -111,7 +111,6 @@ module Desiru
         end
       end
 
-
       def camelcase_field_name(field_name)
         # Convert snake_case to camelCase for GraphQL conventions
         # Remove trailing '?' for optional fields
@@ -122,11 +121,17 @@ module Desiru
 
       def generate_type_cache_key(prefix, fields)
         # Generate a stable cache key based on field structure
-        field_signatures = fields.map do |name, field|
-          "#{name}:#{field.type}:#{field.optional}:#{field.element_type if field.respond_to?(:element_type)}"
+        # Use a more efficient approach with less string concatenation
+        field_data = fields.map do |name, field|
+          components = [name.to_s, field.type.to_s]
+          components << (field.optional ? 'T' : 'F')
+          components << field.element_type.to_s if field.respond_to?(:element_type)
+          components
         end.sort
 
-        "#{prefix}:#{field_signatures.join('|')}"
+        # Use hash for more compact cache keys
+        content_hash = field_data.hash.abs
+        "#{prefix}:#{content_hash}"
       end
     end
   end

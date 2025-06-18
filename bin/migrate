@@ -1,0 +1,16 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'bundler/setup'
+require 'desiru'
+
+# Connect to database
+database_url = ENV['DATABASE_URL'] || 'sqlite://desiru.db'
+puts "Connecting to database: #{database_url}"
+Desiru::Persistence::Database.connect(database_url)
+
+# Run migrations
+puts "Running migrations..."
+Desiru::Persistence::Database.migrate!
+
+puts "Migrations completed successfully!"

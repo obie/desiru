@@ -157,7 +157,7 @@ RSpec.describe 'Module-level assertion methods' do
       logger = instance_double(Logger)
       allow(Desiru).to receive(:logger).and_return(logger)
       expect(logger).to receive(:warn).with('[SUGGESTION] Failed suggestion')
-      
+
       Desiru.suggest(false, 'Failed suggestion')
     end
   end

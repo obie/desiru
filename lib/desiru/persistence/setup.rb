@@ -13,7 +13,8 @@ module Desiru
       end
 
       def self.initialize!(db_connection)
-        return if @initialized
+        # Always reinitialize if the database connection has changed
+        return if @initialized && Sequel::Model.db == db_connection
 
         # Create the base model with a specific database
         Sequel::Model.db = db_connection
@@ -54,6 +55,7 @@ module Desiru
         require_relative 'models/api_request'
         require_relative 'models/optimization_result'
         require_relative 'models/training_example'
+        require_relative 'models/job_result'
 
         # Setup repositories
         require_relative 'repository'

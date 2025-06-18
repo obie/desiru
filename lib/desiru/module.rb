@@ -115,9 +115,7 @@ module Desiru
       return false unless config[:retry_on_failure]
 
       # Handle assertion errors specifically
-      if error.is_a?(Assertions::AssertionError)
-        return error.retriable? && @retry_count < max_retries_for(error)
-      end
+      return error.retriable? && @retry_count < max_retries_for(error) if error.is_a?(Assertions::AssertionError)
 
       # Default retry logic for other errors
       @retry_count < Desiru.configuration.max_retries
@@ -178,7 +176,7 @@ module Desiru
         # Update the assertion error with module context
         error.instance_variable_set(:@module_name, self.class.name)
         error.instance_variable_set(:@retry_count, @retry_count)
-        
+
         Desiru.configuration.logger&.error(
           "[ASSERTION FAILED] #{error.message} in #{self.class.name} after #{@retry_count} retries"
         )

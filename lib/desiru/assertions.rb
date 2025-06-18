@@ -42,8 +42,7 @@ module Desiru
 
     # Configuration for assertion behavior
     class Configuration
-      attr_accessor :max_assertion_retries, :assertion_retry_delay
-      attr_accessor :log_assertions, :track_assertion_metrics
+      attr_accessor :max_assertion_retries, :assertion_retry_delay, :log_assertions, :track_assertion_metrics
 
       def initialize
         @max_assertion_retries = 3
