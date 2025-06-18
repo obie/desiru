@@ -52,6 +52,8 @@ puts "   Status: Processing..."
 # Check if ready (non-blocking)
 sleep(0.1)
 puts "   Ready? #{result.ready?}"
+puts "   Status: #{result.status}"
+puts "   Progress: #{result.progress}%" if result.progress
 
 # Wait for result (blocking with timeout)
 begin

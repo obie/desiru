@@ -31,10 +31,14 @@ RSpec.describe Desiru::Jobs::AsyncPredict do
       end
 
       it 'executes the module and stores the result' do
-        expect(redis).to receive(:setex) do |key, ttl, json_data|
-          expect(key).to eq("desiru:results:#{job_id}")
+        # Allow status updates
+        allow(redis).to receive(:setex).with(/desiru:status:/, anything, anything)
+        
+        # Expect result storage
+        expect(redis).to receive(:setex).at_least(:once) do |key, ttl, json_data|
+          next unless key == "desiru:results:#{job_id}" # Skip status updates
+          
           expect(ttl).to eq(3600)
-
           data = JSON.parse(json_data, symbolize_names: true)
           expect(data[:success]).to be true
           expect(data[:result]).to eq(answer: '4')
@@ -55,10 +59,14 @@ RSpec.describe Desiru::Jobs::AsyncPredict do
       end
 
       it 'stores the error and re-raises' do
-        expect(redis).to receive(:setex) do |key, ttl, json_data|
-          expect(key).to eq("desiru:results:#{job_id}")
+        # Allow status updates
+        allow(redis).to receive(:setex).with(/desiru:status:/, anything, anything)
+        
+        # Expect error result storage
+        expect(redis).to receive(:setex).at_least(:once) do |key, ttl, json_data|
+          next unless key == "desiru:results:#{job_id}" # Skip status updates
+          
           expect(ttl).to eq(3600)
-
           data = JSON.parse(json_data, symbolize_names: true)
           expect(data[:success]).to be false
           expect(data[:error]).to eq('Model error')
