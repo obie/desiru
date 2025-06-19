@@ -5,13 +5,6 @@ require 'singleton'
 
 # Main namespace for Desiru - Declarative Self-Improving Ruby
 module Desiru
-  class Error < StandardError; end
-  class ConfigurationError < Error; end
-  class SignatureError < Error; end
-  class ModuleError < Error; end
-  class ValidationError < Error; end
-  class TimeoutError < Error; end
-
   class << self
     attr_writer :configuration
 
@@ -35,6 +28,7 @@ end
 
 # Core components
 require_relative 'desiru/version'
+require_relative 'desiru/errors'
 require_relative 'desiru/configuration'
 require_relative 'desiru/field'
 require_relative 'desiru/signature'
@@ -53,10 +47,15 @@ require_relative 'desiru/modules/predict'
 require_relative 'desiru/modules/chain_of_thought'
 require_relative 'desiru/modules/retrieve'
 require_relative 'desiru/modules/react'
+require_relative 'desiru/modules/program_of_thought'
+require_relative 'desiru/modules/multi_chain_comparison'
+require_relative 'desiru/modules/majority'
 
 # Optimizers
 require_relative 'desiru/optimizers/base'
 require_relative 'desiru/optimizers/bootstrap_few_shot'
+require_relative 'desiru/optimizers/knn_few_shot'
+require_relative 'desiru/optimizers/copro'
 
 # Background jobs
 require_relative 'desiru/async_capable'

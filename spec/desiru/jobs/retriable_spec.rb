@@ -24,8 +24,8 @@ RSpec.describe Desiru::Jobs::Retriable do
       end
 
       # Alias it properly for the retriable mixin
-      alias perform_without_retries perform_base
-      alias perform perform_with_retries
+      alias_method :perform_without_retries, :perform_base
+      alias_method :perform, :perform_with_retries
     end
   end
 

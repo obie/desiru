@@ -148,25 +148,25 @@ module Desiru
     def default_validator
       case type
       when :string
-        ->(v) { v.is_a?(String) }
+        ->(value) { value.is_a?(String) }
       when :int
-        ->(v) { v.is_a?(Integer) }
+        ->(value) { value.is_a?(Integer) }
       when :float
-        ->(v) { v.is_a?(Float) || v.is_a?(Integer) }
+        ->(value) { value.is_a?(Float) || value.is_a?(Integer) }
       when :bool
-        ->(v) { v.is_a?(TrueClass) || v.is_a?(FalseClass) }
+        ->(value) { value.is_a?(TrueClass) || value.is_a?(FalseClass) }
       when :literal
-        ->(v) { v.is_a?(String) && literal_values.include?(v) }
+        ->(value) { value.is_a?(String) && literal_values.include?(value) }
       when :list
         if element_type && element_type[:type] == :literal
-          ->(v) { v.is_a?(Array) && v.all? { |elem| element_type[:literal_values].include?(elem.to_s) } }
+          ->(value) { value.is_a?(Array) && value.all? { |elem| element_type[:literal_values].include?(elem.to_s) } }
         else
-          ->(v) { v.is_a?(Array) }
+          ->(value) { value.is_a?(Array) }
         end
       when :hash
-        ->(v) { v.is_a?(Hash) }
+        ->(value) { value.is_a?(Hash) }
       else
-        ->(_v) { true }
+        ->(_value) { true }
       end
     end
   end

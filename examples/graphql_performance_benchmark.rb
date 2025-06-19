@@ -14,7 +14,7 @@ require 'benchmark'
 # Mock model for benchmarking
 class MockModel < Desiru::Models::Base
   def initialize(config = {})
-    super(config)
+    super
   end
 
   def call(_prompt, **_options)

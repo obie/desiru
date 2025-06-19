@@ -21,6 +21,7 @@ module Desiru
       def forward(**inputs)
         query = inputs[:query]
         # Handle k parameter - it might come as nil if optional
+        # Note: 'k' is the standard parameter name in information retrieval
         k = inputs.fetch(:k, 5)
         k = 5 if k.nil? # Ensure we have a value even if nil was passed
 
