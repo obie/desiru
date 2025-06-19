@@ -40,7 +40,9 @@ require_relative 'desiru/cache'
 
 # Model adapters
 require_relative 'desiru/models/base'
-require_relative 'desiru/models/raix_adapter'
+require_relative 'desiru/models/anthropic'
+require_relative 'desiru/models/open_ai'
+require_relative 'desiru/models/open_router'
 
 # Built-in modules
 require_relative 'desiru/modules/predict'

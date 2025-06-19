@@ -21,9 +21,9 @@ module Desiru
 
           Before providing the final answer, you must show your reasoning process. Think through the problem step by step.
 
-          Format your response as:
-          reasoning: [Your step-by-step thought process]
-          [output fields]: [Your final answers]
+          Always format your response with each field on its own line like this:
+          reasoning: Your step-by-step thought process here
+          #{@original_signature.output_fields.keys.map { |field| "#{field}: Your #{field} here" }.join("\n")}
 
           #{format_descriptions}
         PROMPT

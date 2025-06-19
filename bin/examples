@@ -1,0 +1,191 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require "bundler/setup"
+
+# Load environment variables from .env file
+require "dotenv"
+if File.exist?('.env')
+  Dotenv.load
+else
+  puts "Error: No .env file found. Run 'bin/setup' to create one."
+  exit 1
+end
+
+require "desiru"
+
+# Check for API key
+unless ENV['ANTHROPIC_API_KEY'] || ENV['OPENAI_API_KEY'] || ENV['OPENROUTER_API_KEY']
+  puts "Error: No API key found in .env file"
+  puts "Please edit .env and uncomment/add one of:"
+  puts "  ANTHROPIC_API_KEY=your-key-here"
+  puts "  OPENAI_API_KEY=your-key-here"
+  puts "  OPENROUTER_API_KEY=your-key-here"
+  exit 1
+end
+
+# Configure Desiru
+if ENV['ANTHROPIC_API_KEY']
+  Desiru.configure do |config|
+    config.default_model = Desiru::Models::Anthropic.new(
+      api_key: ENV['ANTHROPIC_API_KEY'],
+      model: 'claude-3-haiku-20240307'
+    )
+  end
+  puts "Using Anthropic Claude"
+elsif ENV['OPENAI_API_KEY']
+  Desiru.configure do |config|
+    config.default_model = Desiru::Models::OpenAI.new(
+      api_key: ENV['OPENAI_API_KEY'],
+      model: 'gpt-4o-mini'
+    )
+  end
+  puts "Using OpenAI"
+elsif ENV['OPENROUTER_API_KEY']
+  Desiru.configure do |config|
+    config.default_model = Desiru::Models::OpenRouter.new(
+      api_key: ENV['OPENROUTER_API_KEY'],
+      model: 'anthropic/claude-3-haiku'
+    )
+  end
+  puts "Using OpenRouter"
+end
+
+puts "\nDesiru Examples"
+puts "=" * 50
+
+# Example 1: Simple Prediction
+puts "\n1. Simple Prediction:"
+puts "-" * 30
+predict = Desiru::Modules::Predict.new(
+  Desiru::Signature.new('question -> answer')
+)
+result = predict.call(question: "What is the capital of France?")
+puts "Q: What is the capital of France?"
+puts "A: #{result.answer}"
+
+# Example 2: Chain of Thought
+puts "\n2. Chain of Thought Reasoning:"
+puts "-" * 30
+cot = Desiru::Modules::ChainOfThought.new(
+  Desiru::Signature.new('problem -> solution')
+)
+result = cot.call(problem: "If a train travels 120 miles in 2 hours, what is its average speed?")
+puts "Problem: If a train travels 120 miles in 2 hours, what is its average speed?"
+puts "Solution: #{result.solution}"
+puts "Reasoning: #{result[:reasoning]}" if result[:reasoning]
+
+# Example 3: Typed Signatures with Literals
+puts "\n3. Typed Signatures with Sentiment Analysis:"
+puts "-" * 30
+sentiment = Desiru::Modules::Predict.new(
+  Desiru::Signature.new(
+    "text: string -> sentiment: Literal['positive', 'negative', 'neutral'], confidence: float"
+  )
+)
+
+texts = [
+  "I absolutely love this new framework!",
+  "This is terrible and doesn't work at all.",
+  "The weather is okay today."
+]
+
+texts.each do |text|
+  result = sentiment.call(text: text)
+  puts "Text: \"#{text}\""
+  puts "  → Sentiment: #{result.sentiment} (confidence: #{result.confidence})"
+end
+
+# Example 4: Few-shot Learning with Demonstrations
+puts "\n4. Few-shot Learning with Math Problems:"
+puts "-" * 30
+math_solver = Desiru::Modules::Predict.new(
+  Desiru::Signature.new('problem: string -> solution: string, answer: int')
+)
+
+# Add demonstrations
+math_solver.demos = [
+  {
+    problem: "John has 5 apples and buys 3 more. How many apples does he have?",
+    solution: "John starts with 5 apples and buys 3 more. 5 + 3 = 8",
+    answer: 8
+  },
+  {
+    problem: "A baker made 24 cookies and sold 15. How many are left?",
+    solution: "The baker started with 24 cookies and sold 15. 24 - 15 = 9",
+    answer: 9
+  }
+]
+
+result = math_solver.call(
+  problem: "Sarah had 12 pencils and gave 4 to her friend. How many does she have now?"
+)
+puts "Problem: Sarah had 12 pencils and gave 4 to her friend. How many does she have now?"
+puts "Solution: #{result.solution}"
+puts "Answer: #{result.answer}"
+
+# Example 5: Complex Multi-field Signature
+puts "\n5. Code Analysis with Multiple Outputs:"
+puts "-" * 30
+code_analyzer = Desiru::Modules::ChainOfThought.new(
+  Desiru::Signature.new(
+    'code: string, language: string -> summary: string, complexity: string, suggestions: list'
+  )
+)
+
+code = <<~RUBY
+  def fibonacci(n)
+    return n if n <= 1
+    fibonacci(n - 1) + fibonacci(n - 2)
+  end
+RUBY
+
+result = code_analyzer.call(code: code, language: 'ruby')
+puts "Code:"
+puts code
+puts "\nAnalysis:"
+puts "Summary: #{result.summary}"
+puts "Complexity: #{result.complexity}"
+puts "Suggestions:"
+result.suggestions.each_with_index do |suggestion, i|
+  puts "  #{i + 1}. #{suggestion}"
+end
+
+# Example 6: Using Assertions
+puts "\n6. Module with Assertions:"
+puts "-" * 30
+class TranslationModule < Desiru::Module
+  def forward(text:, target_language:)
+    result = model.complete(
+      messages: [{
+        role: 'user',
+        content: "Translate '#{text}' to #{target_language}. Return only the translation."
+      }]
+    )
+    
+    translation = result[:content].strip
+    
+    # Assert that we got a non-empty translation
+    Desiru.assert(!translation.empty?, "Translation should not be empty")
+    
+    # Suggest (warn) if translation seems too similar to input
+    Desiru.suggest(
+      translation.downcase != text.downcase,
+      "Translation might be incorrect - too similar to input"
+    )
+    
+    { translation: translation }
+  end
+end
+
+translator = TranslationModule.new(
+  Desiru::Signature.new('text: string, target_language: string -> translation: string')
+)
+
+result = translator.call(text: "Hello, world!", target_language: "Spanish")
+puts "English: Hello, world!"
+puts "Spanish: #{result.translation}"
+
+puts "\n" + "=" * 50
+puts "Examples completed!"
+puts "\nTo explore more, run: bin/console"

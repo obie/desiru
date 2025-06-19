@@ -10,9 +10,9 @@ require 'desiru/graphql/schema_generator'
 
 # Configure Desiru
 Desiru.configure do |config|
-  config.default_model = Desiru::Models::RaixAdapter.new(
-    client: 'openai',
-    model: 'gpt-3.5-turbo'
+  config.default_model = Desiru::Models::OpenAI.new(
+    model: 'gpt-3.5-turbo',
+    api_key: ENV['OPENAI_API_KEY'] || raise('Please set OPENAI_API_KEY environment variable')
   )
 end
 

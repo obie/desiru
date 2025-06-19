@@ -14,6 +14,8 @@ module Desiru
           demos: demos
         )
 
+        Desiru.logger.info("Predict response: #{response}")
+
         parse_response(response[:content])
       end
 
@@ -32,7 +34,12 @@ module Desiru
 
           #{format_signature}
 
-          Respond with only the requested output fields in a clear format.
+          Format your response with each output field on its own line using the pattern:
+          field_name: value
+
+          For example, if the output field is "answer", write:
+          answer: Your answer here
+
           #{format_descriptions}
         PROMPT
       end

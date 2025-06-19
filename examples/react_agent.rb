@@ -88,9 +88,9 @@ end
 
 # Configure Desiru
 Desiru.configure do |config|
-  config.default_model = Desiru::Models::RaixAdapter.new(
-    provider: ENV['LLM_PROVIDER'] || 'anthropic',
-    model: ENV['LLM_MODEL'] || 'claude-3-haiku-20240307'
+  config.default_model = Desiru::Models::Anthropic.new(
+    model: ENV['LLM_MODEL'] || 'claude-3-haiku-20240307',
+    api_key: ENV['ANTHROPIC_API_KEY'] || raise('Please set ANTHROPIC_API_KEY environment variable')
   )
 end
 
