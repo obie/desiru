@@ -39,7 +39,7 @@ module Desiru
           record
         end
 
-        def delete(id)
+        def delete?(id)
           record = find(id)
           return false unless record
 

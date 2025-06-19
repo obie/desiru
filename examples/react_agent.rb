@@ -50,7 +50,7 @@ class CalculatorTool
 
     # Only allow basic math operations
     if expression =~ %r{^[\d\s\+\-\*/\(\)\.]+$}
-      result = eval(expression)
+      result = eval(expression) # rubocop:disable Security/Eval
       "Result: #{result}"
     else
       "Error: Invalid expression. Only numbers and basic operators allowed."
@@ -137,7 +137,8 @@ complex_agent = Desiru::Modules::ReAct.new(
 )
 
 result = complex_agent.call(
-  query: "I'm planning a trip. Get the weather for London and Sydney, calculate the time difference between GMT and AEST, and tell me what time it is in both cities."
+  query: "I'm planning a trip. Get the weather for London and Sydney, " \
+         "calculate the time difference between GMT and AEST, and tell me what time it is in both cities."
 )
 puts "Query: Planning a trip - need weather and time info for London and Sydney"
 puts "Summary: #{result[:summary]}"

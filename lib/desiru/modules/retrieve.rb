@@ -68,7 +68,7 @@ module Desiru
         raise NotImplementedError, 'Subclasses must implement #add'
       end
 
-      def search(_query, k: 5)
+      def search(_query, k: 5) # rubocop:disable Naming/MethodParameterName
         raise NotImplementedError, 'Subclasses must implement #search'
       end
 
@@ -109,7 +109,7 @@ module Desiru
         @embeddings.concat(embeddings)
       end
 
-      def search(query, k: 5)
+      def search(query, k: 5) # rubocop:disable Naming/MethodParameterName
         return [] if @documents.empty?
 
         # Generate query embedding

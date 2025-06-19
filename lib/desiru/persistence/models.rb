@@ -5,7 +5,7 @@ module Desiru
     # Namespace for Sequel models
     module Models
       # Base class will be defined during setup
-      Base = nil
+      Base = nil # rubocop:disable Naming/ConstantName
     end
   end
 end

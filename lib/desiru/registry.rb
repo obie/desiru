@@ -32,11 +32,9 @@ module Desiru
     def get(name, version: nil)
       name = name.to_sym
 
-      if version
-        @module_versions[name][version] || raise(ModuleError, "Module #{name} v#{version} not found")
-      else
-        @modules[name] || raise(ModuleError, "Module #{name} not found")
-      end
+      return @module_versions[name][version] || raise(ModuleError, "Module #{name} v#{version} not found") if version
+
+      @modules[name] || raise(ModuleError, "Module #{name} not found")
     end
 
     def list

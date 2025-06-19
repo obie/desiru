@@ -55,21 +55,21 @@ end
 class Calculator < Desiru::Module
   signature 'Calculator', 'Perform basic math operations'
 
-  input 'a', type: 'float', desc: 'First number'
-  input 'b', type: 'float', desc: 'Second number'
+  input 'num1', type: 'float', desc: 'First number'
+  input 'num2', type: 'float', desc: 'Second number'
   input 'operation', type: 'string', desc: 'Operation (+, -, *, /)'
 
   output 'result', type: 'float', desc: 'Calculation result'
 
-  def forward(a:, b:, operation:)
+  def forward(num1:, num2:, operation:)
     result = case operation
-             when '+' then a + b
-             when '-' then a - b
-             when '*' then a * b
+             when '+' then num1 + num2
+             when '-' then num1 - num2
+             when '*' then num1 * num2
              when '/'
-               raise ArgumentError, "Division by zero" if b.zero?
+               raise ArgumentError, "Division by zero" if num2.zero?
 
-               a / b
+               num1 / num2
              else
                raise ArgumentError, "Unknown operation: #{operation}"
              end
@@ -99,8 +99,10 @@ puts "  POST /api/v1/async/text - Async text processing"
 puts "  POST /api/v1/async/calculate - Async calculator"
 puts "  GET  /api/v1/jobs/:job_id - Check async job status"
 puts "\nExample requests:"
-puts "  curl -X POST http://localhost:9293/api/v1/text -H 'Content-Type: application/json' -d '{\"text\": \"Hello World\", \"operation\": \"uppercase\"}'"
-puts "  curl -X POST http://localhost:9293/api/v1/calculate -H 'Content-Type: application/json' -d '{\"a\": 10, \"b\": 5, \"operation\": \"+\"}'"
+puts "  curl -X POST http://localhost:9293/api/v1/text " \
+     "-H 'Content-Type: application/json' -d '{\"text\": \"Hello World\", \"operation\": \"uppercase\"}'"
+puts "  curl -X POST http://localhost:9293/api/v1/calculate " \
+     "-H 'Content-Type: application/json' -d '{\"num1\": 10, \"num2\": 5, \"operation\": \"+\"}'"
 puts "\nPress Ctrl+C to stop the server"
 
 # Start the server

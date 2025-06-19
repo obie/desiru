@@ -32,7 +32,7 @@ module Desiru
             .all
         end
 
-        def mark_as_used(id)
+        def mark_as_used?(id)
           record = find(id)
           return false unless record
 

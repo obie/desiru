@@ -41,14 +41,14 @@ module Desiru
 
       begin
         # Validate inputs first, then coerce
-        signature.validate_inputs(inputs)
+        signature.valid_inputs?(inputs)
         coerced_inputs = signature.coerce_inputs(inputs)
 
         # Execute the module logic
         result = forward(**coerced_inputs)
 
         # Validate outputs first, then coerce
-        signature.validate_outputs(result)
+        signature.valid_outputs?(result)
         coerced_outputs = signature.coerce_outputs(result)
 
         # Return result object

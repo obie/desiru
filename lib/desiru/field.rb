@@ -21,7 +21,7 @@ module Desiru
       @validator = validator || default_validator
     end
 
-    def validate(value)
+    def valid?(value)
       return true if optional && value.nil?
       return true if value.nil? && !default.nil?
 
@@ -65,8 +65,9 @@ module Desiru
           array_value.map do |elem|
             coerced_elem = elem.to_s
             unless element_type[:literal_values].include?(coerced_elem)
+              allowed = element_type[:literal_values].join(', ')
               raise ValidationError,
-                    "Array element '#{coerced_elem}' is not one of allowed values: #{element_type[:literal_values].join(', ')}"
+                    "Array element '#{coerced_elem}' is not one of allowed values: #{allowed}"
             end
 
             coerced_elem
