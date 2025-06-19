@@ -48,7 +48,7 @@ module Desiru
         when 'false', 'no', '0', 'f'
           false
         else
-          !!value
+          !value.nil?
         end
       when :literal
         # For literal types, ensure the value is a string and matches one of the allowed values

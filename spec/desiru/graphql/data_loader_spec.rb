@@ -259,7 +259,7 @@ RSpec.describe Desiru::GraphQL::DataLoader do
         error = StandardError.new("test error")
         promise.reject(error)
 
-        expect(promise.rejected?).to eq(true)
+        expect(promise.rejected?).to be(true)
         expect { promise.value }.to raise_error(StandardError, "test error")
       end
     end

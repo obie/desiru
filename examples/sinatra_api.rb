@@ -67,7 +67,7 @@ class Calculator < Desiru::Module
              when '-' then a - b
              when '*' then a * b
              when '/'
-               raise ArgumentError, "Division by zero" if b == 0
+               raise ArgumentError, "Division by zero" if b.zero?
 
                a / b
              else

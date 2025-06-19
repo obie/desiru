@@ -30,7 +30,7 @@ class TextAnalyzer < Desiru::Module
   output 'themes', type: 'list[string]', desc: 'Key themes identified'
   output 'confidence', type: 'float', desc: 'Confidence score (0-1)'
 
-  def forward(text:)
+  def forward(_text:)
     # Simulate analysis
     {
       sentiment: %w[positive negative neutral].sample,

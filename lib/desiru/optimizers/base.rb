@@ -22,7 +22,7 @@ module Desiru
 
       def evaluate(program, dataset)
         scores = dataset.map do |example|
-          prediction = program.call(example.reject { |k, _| %i[answer output].include?(k) })
+          prediction = program.call(example.except(:answer, :output))
           score_prediction(prediction, example)
         end
 

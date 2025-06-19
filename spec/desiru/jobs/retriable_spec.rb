@@ -6,25 +6,31 @@ require 'desiru/jobs/retriable'
 
 RSpec.describe Desiru::Jobs::Retriable do
   # Test job class that includes Retriable
-  class TestRetriableJob < Desiru::Jobs::Base
-    include Desiru::Jobs::Retriable
+  let(:test_retriable_job_class) do
+    Class.new(Desiru::Jobs::Base) do
+      include Desiru::Jobs::Retriable
 
-    configure_retries(
-      max_retries: 3,
-      strategy: Desiru::Jobs::RetryStrategies::FixedDelay.new(delay: 0.1),
-      non_retriable: [ArgumentError]
-    )
+      configure_retries(
+        max_retries: 3,
+        strategy: Desiru::Jobs::RetryStrategies::FixedDelay.new(delay: 0.1),
+        non_retriable: [ArgumentError]
+      )
 
-    # Define the base perform method
-    def perform_base(_job_id, should_fail = false, error_class = StandardError)
-      raise error_class, "Test error" if should_fail
+      # Define the base perform method
+      def perform_base(_job_id, should_fail = false, error_class = StandardError)
+        raise error_class, "Test error" if should_fail
 
-      "Success"
+        "Success"
+      end
+
+      # Alias it properly for the retriable mixin
+      alias perform_without_retries perform_base
+      alias perform perform_with_retries
     end
+  end
 
-    # Alias it properly for the retriable mixin
-    alias perform_without_retries perform_base
-    alias perform perform_with_retries
+  before do
+    stub_const('TestRetriableJob', test_retriable_job_class)
   end
 
   describe 'retry behavior' do
@@ -60,8 +66,14 @@ RSpec.describe Desiru::Jobs::Retriable do
   end
 
   describe '.configure_retries' do
-    class CustomRetriableJob < Desiru::Jobs::Base
-      include Desiru::Jobs::Retriable
+    let(:custom_retriable_job_class) do
+      Class.new(Desiru::Jobs::Base) do
+        include Desiru::Jobs::Retriable
+      end
+    end
+
+    before do
+      stub_const('CustomRetriableJob', custom_retriable_job_class)
     end
 
     it 'configures retry policy' do

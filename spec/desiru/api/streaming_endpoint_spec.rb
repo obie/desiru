@@ -5,15 +5,21 @@ require 'stringio'
 
 RSpec.describe 'Streaming Endpoint SSE Format' do
   # Mock stream object to capture SSE output
-  class MockStream < StringIO
-    def <<(data)
-      write(data)
-      self
-    end
+  let(:mock_stream_class) do
+    Class.new(StringIO) do
+      def <<(data)
+        write(data)
+        self
+      end
 
-    def close
-      # No-op for testing
+      def close
+        # No-op for testing
+      end
     end
+  end
+
+  before do
+    stub_const('MockStream', mock_stream_class)
   end
 
   let(:mock_model) do

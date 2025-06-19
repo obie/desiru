@@ -80,7 +80,7 @@ module Desiru
 
           begin
             # Get module prediction
-            inputs = example.reject { |k, _| %i[answer output].include?(k) }
+            inputs = example.except(:answer, :output)
             prediction = module_instance.call(inputs)
 
             # Score the prediction
@@ -110,7 +110,7 @@ module Desiru
         # Add labeled examples if available
         labeled = examples.select { |ex| ex[:answer] || ex[:output] }
         labeled_demos = labeled.first(config[:max_labeled_demos]).map do |ex|
-          inputs = ex.reject { |k, _| %i[answer output].include?(k) }
+          inputs = ex.except(:answer, :output)
           {
             input: format_demo_input(inputs),
             output: format_demo_output(ex),

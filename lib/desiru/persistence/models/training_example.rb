@@ -17,7 +17,7 @@ module Desiru
         end
 
         def used?
-          used_count && used_count > 0
+          used_count&.positive?
         end
       end
     end

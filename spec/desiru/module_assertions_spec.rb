@@ -28,7 +28,7 @@ RSpec.describe 'Module with Assertions' do
     end
   end
 
-  let(:model) { instance_double('Model', complete: { text: 'response' }) }
+  let(:model) { instance_double(Model, complete: { text: 'response' }) }
   let(:logger) { instance_double(Logger, warn: nil, error: nil) }
 
   before do

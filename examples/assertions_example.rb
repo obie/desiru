@@ -6,7 +6,7 @@ require 'desiru'
 
 # Mock model for demonstration
 class MockModel
-  def complete(messages:, **_options)
+  def complete(_messages:, **_options)
     # Simple mock that returns predefined responses
     { choices: [{ message: { content: "Mock response" } }] }
   end

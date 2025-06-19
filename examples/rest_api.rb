@@ -158,7 +158,7 @@ logged_app = Rack::Builder.new do
 end
 
 # Start the server
-if __FILE__ == $0
+if __FILE__ == $PROGRAM_NAME
   puts "Starting Desiru REST API server..."
   puts "Visit http://localhost:9292 for documentation"
   puts "API endpoints available at http://localhost:9292/api/v1/*"

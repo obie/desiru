@@ -18,7 +18,7 @@ module Desiru
         end
 
         def improvement_percentage
-          return nil unless baseline_score && score > 0
+          return nil unless baseline_score && score.positive?
 
           ((score - baseline_score) / baseline_score * 100).round(2)
         end

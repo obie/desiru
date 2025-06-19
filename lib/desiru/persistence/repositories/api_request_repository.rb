@@ -40,7 +40,7 @@ module Desiru
           scope = scope.exclude(response_time: nil)
 
           avg = scope.avg(:response_time)
-          avg ? avg.round(3) : nil
+          avg&.round(3)
         end
 
         def requests_per_minute(minutes_ago = 60)
@@ -87,8 +87,7 @@ module Desiru
         def extract_response_body(response)
           return nil unless response.body.respond_to?(:each)
 
-          body = []
-          response.body.each { |part| body << part }
+          body = response.body.map { |part| part }
           body.join
         rescue StandardError
           nil

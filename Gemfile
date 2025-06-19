@@ -8,6 +8,7 @@ ruby '>= 3.2.0'
 gemspec
 
 group :development, :test do
+  gem 'mock_redis', '~> 0.40'
   gem 'pry', '~> 0.14'
   gem 'pry-byebug', '~> 3.10'
   gem 'rack-test', '~> 2.0'
@@ -17,6 +18,7 @@ group :development, :test do
   gem 'rubocop-rake', '~> 0.6'
   gem 'rubocop-rspec', '~> 2.0'
   gem 'simplecov', '~> 0.22', require: false
+  gem 'webmock', '~> 3.0'
   gem 'yard', '~> 0.9'
 end
 

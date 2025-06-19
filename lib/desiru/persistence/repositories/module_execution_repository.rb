@@ -46,7 +46,7 @@ module Desiru
           scope = scope.where(module_name: module_name) if module_name
 
           total = scope.count
-          return 0.0 if total == 0
+          return 0.0 if total.zero?
 
           successful = scope.where(status: 'completed').count
           (successful.to_f / total * 100).round(2)

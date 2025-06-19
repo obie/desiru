@@ -39,7 +39,7 @@ RSpec.describe Desiru::Jobs::Scheduler do
     end
 
     it 'schedules with arguments' do
-      args = ['arg1', 'arg2']
+      args = %w[arg1 arg2]
       scheduler.schedule('test_job', job_class: test_job_class, cron: '60', args: args)
 
       job_info = scheduler.job_info('test_job')
@@ -104,7 +104,7 @@ RSpec.describe Desiru::Jobs::Scheduler do
     it 'passes arguments to the job' do
       allow(test_job_class).to receive(:perform_async)
 
-      args = ['arg1', 'arg2']
+      args = %w[arg1 arg2]
       scheduler.schedule('test_job', job_class: test_job_class, cron: '1', args: args)
       scheduler.start
 
@@ -265,7 +265,7 @@ RSpec.describe Desiru::Jobs::Schedulable do
     end
 
     it 'passes arguments to the scheduler' do
-      args = ['arg1', 'arg2']
+      args = %w[arg1 arg2]
       job_class.schedule(cron: '60', args: args)
 
       job_info = scheduler.job_info('SchedulableTestJob')

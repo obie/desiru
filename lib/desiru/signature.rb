@@ -174,7 +174,7 @@ module Desiru
           bracket_count += 1
         elsif char == ']'
           bracket_count -= 1
-        elsif char == ',' && bracket_count == 0
+        elsif char == ',' && bracket_count.zero?
           fields << current_field.strip
           current_field = String.new
           next
@@ -259,14 +259,14 @@ module Desiru
             bracket_count += 1
           elsif char == ']'
             bracket_count -= 1
-            if bracket_count == 0
+            if bracket_count.zero?
               end_index = index
               break
             end
           end
         end
 
-        if end_index > 0
+        if end_index.positive?
           literal_content = type_string[8...end_index] # Extract content between 'Literal[' and ']'
           values = parse_literal_values(literal_content)
           return { type: :literal, literal_values: values, original_type: type_string }
@@ -287,14 +287,14 @@ module Desiru
             bracket_count += 1
           elsif char == ']'
             bracket_count -= 1
-            if bracket_count == 0
+            if bracket_count.zero?
               end_index = index
               break
             end
           end
         end
 
-        if end_index > 0
+        if end_index.positive?
           element_type_str = type_string[(start_index + 1)...end_index]
           element_type_data = parse_type(element_type_str) # Recursive for nested types
           return { type: :list, element_type: element_type_data, original_type: type_string }
@@ -345,7 +345,7 @@ module Desiru
           current_value << char # Include the quote in the value
         elsif in_quotes && char == quote_char
           # Check if it's escaped
-          if index > 0 && literal_content[index - 1] != '\\'
+          if index.positive? && literal_content[index - 1] != '\\'
             in_quotes = false
             current_value << char # Include the closing quote
             quote_char = nil

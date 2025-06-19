@@ -32,8 +32,8 @@ class AuthMiddleware
 
     auth_header = env['HTTP_AUTHORIZATION']
 
-    if auth_header && auth_header.start_with?('Bearer ')
-      token = auth_header.split(' ')[1]
+    if auth_header&.start_with?('Bearer ')
+      token = auth_header.split[1]
 
       begin
         payload = JWT.decode(token, @secret, true, algorithm: 'HS256')[0]
@@ -313,7 +313,7 @@ def generate_token(user_id, tier = 'free')
   JWT.encode(payload, secret, 'HS256')
 end
 
-if __FILE__ == $0
+if __FILE__ == $PROGRAM_NAME
   puts "Starting Advanced Desiru REST API server..."
   puts "\nExample tokens for testing:"
   puts "Free tier:    Bearer #{generate_token('user123', 'free')}"

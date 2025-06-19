@@ -38,8 +38,6 @@ module Desiru
           helpers do
             def grape_type_for(type_string)
               case type_string.to_s.downcase
-              when 'string', 'str'
-                String
               when 'integer', 'int'
                 Integer
               when 'float'
@@ -49,7 +47,7 @@ module Desiru
               when /^list/
                 Array
               else
-                String # Default to String for unknown types
+                String # Default to String for unknown types (including 'string', 'str')
               end
             end
 
@@ -127,20 +125,7 @@ module Desiru
               # Generate params from signature
               desiru_module.signature.input_fields.each do |name, field|
                 # Convert Desiru types to Grape types
-                grape_type = case field.type.to_s.downcase
-                             when 'string', 'str'
-                               String
-                             when 'integer', 'int'
-                               Integer
-                             when 'float'
-                               Float
-                             when 'boolean', 'bool'
-                               Grape::API::Boolean
-                             when /^list/
-                               Array
-                             else
-                               String # Default to String for unknown types
-                             end
+                grape_type = grape_type_for(field.type)
 
                 optional name, type: grape_type, desc: field.description
               end
@@ -213,20 +198,7 @@ module Desiru
                 params do
                   desiru_module.signature.input_fields.each do |name, field|
                     # Convert Desiru types to Grape types
-                    grape_type = case field.type.to_s.downcase
-                                 when 'string', 'str'
-                                   String
-                                 when 'integer', 'int'
-                                   Integer
-                                 when 'float'
-                                   Float
-                                 when 'boolean', 'bool'
-                                   Grape::API::Boolean
-                                 when /^list/
-                                   Array
-                                 else
-                                   String # Default to String for unknown types
-                                 end
+                    grape_type = grape_type_for(field.type)
 
                     optional name, type: grape_type, desc: field.description
                   end

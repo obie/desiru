@@ -56,7 +56,7 @@ RSpec.describe Desiru::API::SinatraIntegration do
 
       it 'has a health check endpoint' do
         get '/api/v1/health'
-        expect(last_response.status).to eq(200)
+        expect(last_response).to have_http_status(:ok)
 
         body = JSON.parse(last_response.body)
         expect(body['status']).to eq('ok')
@@ -69,7 +69,7 @@ RSpec.describe Desiru::API::SinatraIntegration do
 
           post '/api/v1/test', { input: 'test' }.to_json, { 'CONTENT_TYPE' => 'application/json' }
 
-          expect(last_response.status).to eq(200)
+          expect(last_response).to have_http_status(:ok)
           body = JSON.parse(last_response.body)
           expect(body['output']).to eq('test result')
         end
@@ -79,7 +79,7 @@ RSpec.describe Desiru::API::SinatraIntegration do
 
           post '/api/v1/test', {}.to_json, { 'CONTENT_TYPE' => 'application/json' }
 
-          expect(last_response.status).to eq(400)
+          expect(last_response).to have_http_status(:bad_request)
           body = JSON.parse(last_response.body)
           expect(body['error']).to include('Missing required parameter')
         end
@@ -89,7 +89,7 @@ RSpec.describe Desiru::API::SinatraIntegration do
 
           post '/api/v1/test', { input: 123 }.to_json, { 'CONTENT_TYPE' => 'application/json' }
 
-          expect(last_response.status).to eq(400)
+          expect(last_response).to have_http_status(:bad_request)
           body = JSON.parse(last_response.body)
           expect(body['error']).to include('Invalid type')
         end
@@ -116,7 +116,7 @@ RSpec.describe Desiru::API::SinatraIntegration do
 
           post '/api/v1/complex', expected_input.to_json, { 'CONTENT_TYPE' => 'application/json' }
 
-          expect(last_response.status).to eq(200)
+          expect(last_response).to have_http_status(:ok)
           body = JSON.parse(last_response.body)
           expect(body['status']).to eq('processed')
         end
@@ -126,7 +126,7 @@ RSpec.describe Desiru::API::SinatraIntegration do
 
           post '/api/v1/test', { input: 'test' }.to_json, { 'CONTENT_TYPE' => 'application/json' }
 
-          expect(last_response.status).to eq(500)
+          expect(last_response).to have_http_status(:internal_server_error)
           body = JSON.parse(last_response.body)
           expect(body['error']).to eq('Something went wrong')
         end
@@ -154,7 +154,7 @@ RSpec.describe Desiru::API::SinatraIntegration do
 
           post '/api/v1/async/async_test', { input: 'test' }.to_json, { 'CONTENT_TYPE' => 'application/json' }
 
-          expect(last_response.status).to eq(202)
+          expect(last_response).to have_http_status(:accepted)
           body = JSON.parse(last_response.body)
           expect(body['job_id']).to eq('job123')
           expect(body['status']).to eq('pending')
@@ -172,7 +172,7 @@ RSpec.describe Desiru::API::SinatraIntegration do
 
           get '/api/v1/jobs/job123'
 
-          expect(last_response.status).to eq(200)
+          expect(last_response).to have_http_status(:ok)
           body = JSON.parse(last_response.body)
           expect(body['status']).to eq('completed')
         end
@@ -183,7 +183,7 @@ RSpec.describe Desiru::API::SinatraIntegration do
 
           get '/api/v1/jobs/nonexistent'
 
-          expect(last_response.status).to eq(404)
+          expect(last_response).to have_http_status(:not_found)
           body = JSON.parse(last_response.body)
           expect(body['error']).to eq('Job not found')
         end
@@ -210,7 +210,7 @@ RSpec.describe Desiru::API::SinatraIntegration do
         it 'provides streaming endpoints', skip: 'rack-test does not support streaming responses' do
           post '/api/v1/stream/test', { input: 'test' }.to_json, { 'CONTENT_TYPE' => 'application/json' }
 
-          expect(last_response.status).to eq(200)
+          expect(last_response).to have_http_status(:ok)
           expect(last_response.headers['Content-Type']).to include('text/event-stream')
         end
       end

@@ -36,7 +36,7 @@ module Desiru
         end
       end
 
-      def common_field_sets # rubocop:disable Metrics/MethodLength
+      def common_field_sets
         [
           # Single field types
           { id: create_field(:string, false) },

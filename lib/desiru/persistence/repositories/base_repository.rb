@@ -52,7 +52,7 @@ module Desiru
         end
 
         def exists?(conditions)
-          dataset.where(conditions).count > 0
+          dataset.where(conditions).count.positive?
         end
 
         def paginate(page: 1, per_page: 20)

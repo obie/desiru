@@ -144,7 +144,7 @@ module Desiru
       def parse_cron_expression(cron_expression, last_run)
         # Simple cron parser for common patterns
         # Format: minute hour day month weekday
-        parts = cron_expression.split(' ')
+        parts = cron_expression.split
 
         case parts.length
         when 5

@@ -8,9 +8,9 @@ AllCops:
     - 'bin/**/*'
     - 'spec/fixtures/**/*'
 
-require:
+plugins:
   - rubocop-rake
-  - rubocop-rspec
+
 
 # Relaxed metrics for DSL-heavy library code
 Metrics/MethodLength:
@@ -52,4 +52,7 @@ Layout/LineLength:
     - 'spec/**/*'
 
 Gemspec/RequireMFA:
+  Enabled: false
+
+Metrics:
   Enabled: false

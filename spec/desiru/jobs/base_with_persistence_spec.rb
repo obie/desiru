@@ -4,55 +4,59 @@ require 'spec_helper'
 require 'support/database_helper'
 require 'desiru/persistence/setup'
 
-RSpec.describe Desiru::Jobs::Base, :persistence do
+RSpec.describe Desiru::Jobs::Base, :persistence, :redis_mock do
   # Force a new database connection for this test file
   before(:all) do
     DatabaseHelper.setup_connection(force_new: true)
   end
 
   # Test job class that uses the base functionality
-  class TestPersistenceJob < described_class
-    def perform(job_id, inputs)
-      # Create job record when starting
-      create_job_record(job_id, inputs: inputs)
+  let(:test_persistence_job_class) do
+    Class.new(described_class) do
+      def perform(job_id, inputs)
+        # Create job record when starting
+        create_job_record(job_id, inputs: inputs)
 
-      # Mark as processing
-      update_status(job_id, 'processing', progress: 0)
+        # Mark as processing
+        update_status(job_id, 'processing', progress: 0)
 
-      # Simulate work
-      sleep 0.1
-      update_status(job_id, 'processing', progress: 50, message: 'Halfway done')
+        # Simulate work
+        sleep 0.1
+        update_status(job_id, 'processing', progress: 50, message: 'Halfway done')
 
-      # Complete the job
-      result = { output: "Processed: #{inputs[:text]}", timestamp: Time.now.iso8601 }
-      store_result(job_id, result)
-      update_status(job_id, 'completed', progress: 100)
+        # Complete the job
+        result = { output: "Processed: #{inputs[:text]}", timestamp: Time.now.iso8601 }
+        store_result(job_id, result)
+        update_status(job_id, 'completed', progress: 100)
 
-      result
+        result
+      end
     end
   end
 
-  class TestFailingJob < described_class
-    def perform(job_id)
-      create_job_record(job_id)
-      update_status(job_id, 'processing')
+  let(:test_failing_job_class) do
+    Class.new(described_class) do
+      def perform(job_id)
+        create_job_record(job_id)
+        update_status(job_id, 'processing')
 
-      # Simulate failure
-      error = StandardError.new('Simulated job failure')
-      persist_error_to_db(job_id, error, caller)
-      update_status(job_id, 'failed')
+        # Simulate failure
+        error = StandardError.new('Simulated job failure')
+        persist_error_to_db(job_id, error, caller)
+        update_status(job_id, 'failed')
 
-      raise error
+        raise error
+      end
     end
   end
-
-  let(:redis) { Redis.new }
-  let(:job_repo) { Desiru::Persistence.repositories[:job_results] }
 
   before do
-    redis.flushdb
-    # DatabaseHelper handles database cleanup for :persistence tagged tests
+    stub_const('TestPersistenceJob', test_persistence_job_class)
+    stub_const('TestFailingJob', test_failing_job_class)
   end
+
+  let(:redis) { mock_redis }
+  let(:job_repo) { Desiru::Persistence.repositories[:job_results] }
 
   describe 'with persistence enabled' do
     before do

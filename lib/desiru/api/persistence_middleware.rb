@@ -94,8 +94,7 @@ module Desiru
       def extract_body(body)
         return nil unless body.respond_to?(:each)
 
-        content = []
-        body.each { |part| content << part }
+        content = body.map { |part| part }
 
         # Try to parse as JSON
         JSON.parse(content.join)

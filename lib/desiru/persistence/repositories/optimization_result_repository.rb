@@ -37,9 +37,7 @@ module Desiru
           scope = dataset.exclude(baseline_score: nil)
           scope = scope.where(module_name: module_name) if module_name
 
-          improvements = scope.select_map do |record|
-            record.improvement_percentage
-          end.compact
+          improvements = scope.select_map(&:improvement_percentage).compact
 
           return nil if improvements.empty?
 

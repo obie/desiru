@@ -218,7 +218,7 @@ module Desiru
         raise "Unknown tool: #{tool_name}" unless tool
 
         # Call the tool with arguments
-        if tool.arity == 0
+        if tool.arity.zero?
           tool.call
         elsif tool.arity == 1 && args.is_a?(Hash)
           # Pass args as keyword arguments if possible
@@ -260,10 +260,10 @@ module Desiru
           step = truncated[0]
           # Truncate the observation if it exists and is long
           if step[:observation] && step[:observation].length > 100
-            step[:observation] = step[:observation][0..100] + "... (truncated)"
+            step[:observation] = "#{step[:observation][0..100]}... (truncated)"
           end
           # Truncate thought if it's very long
-          step[:thought] = step[:thought][0..100] + "... (truncated)" if step[:thought] && step[:thought].length > 100
+          step[:thought] = "#{step[:thought][0..100]}... (truncated)" if step[:thought] && step[:thought].length > 100
         end
 
         truncated

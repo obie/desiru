@@ -23,6 +23,8 @@ GEM
       securerandom (>= 0.3)
       tzinfo (~> 2.0, >= 2.0.5)
       uri (>= 0.13.1)
+    addressable (2.8.7)
+      public_suffix (>= 2.0.2, < 7.0)
     ast (2.4.3)
     async (2.25.0)
       console (~> 1.29)
@@ -41,6 +43,9 @@ GEM
       fiber-annotation
       fiber-local (~> 1.1)
       json
+    crack (1.0.0)
+      bigdecimal
+      rexml
     diff-lcs (1.6.2)
     docile (1.4.1)
     dotenv (3.1.8)
@@ -111,6 +116,7 @@ GEM
       base64
       fiber-storage
       logger
+    hashdiff (1.2.0)
     i18n (1.14.7)
       concurrent-ruby (~> 1.0)
     ice_nine (0.11.2)
@@ -125,6 +131,8 @@ GEM
     metrics (0.12.2)
     mini_portile2 (2.8.9)
     minitest (5.25.5)
+    mock_redis (0.50.0)
+      redis (~> 5)
     multi_json (1.15.0)
     multipart-post (2.4.1)
     mustermann (3.0.3)
@@ -150,6 +158,7 @@ GEM
     pry-byebug (3.11.0)
       byebug (~> 12.0)
       pry (>= 0.13, < 0.16)
+    public_suffix (6.0.2)
     racc (1.8.1)
     rack (2.2.17)
     rack-cors (2.0.2)
@@ -175,6 +184,7 @@ GEM
     redis-client (0.25.0)
       connection_pool
     regexp_parser (2.10.0)
+    rexml (3.4.1)
     rspec (3.13.1)
       rspec-core (~> 3.13.0)
       rspec-expectations (~> 3.13.0)
@@ -261,6 +271,10 @@ GEM
       unicode-emoji (~> 4.0, >= 4.0.4)
     unicode-emoji (4.0.4)
     uri (1.0.3)
+    webmock (3.25.1)
+      addressable (>= 2.8.0)
+      crack (>= 0.3.2)
+      hashdiff (>= 0.4.0, < 2.0.0)
     yard (0.9.37)
     zeitwerk (2.7.3)
 
@@ -279,6 +293,7 @@ DEPENDENCIES
   grape (~> 2.0)
   graphql (~> 2.0)
   jwt (~> 2.0)
+  mock_redis (~> 0.40)
   pry (~> 0.14)
   pry-byebug (~> 3.10)
   rack-cors (~> 2.0)
@@ -296,6 +311,7 @@ DEPENDENCIES
   sinatra (~> 3.0)
   sinatra-contrib (~> 3.0)
   sqlite3 (~> 1.6)
+  webmock (~> 3.0)
   yard (~> 0.9)
 
 RUBY VERSION

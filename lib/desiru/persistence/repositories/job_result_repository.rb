@@ -108,7 +108,7 @@ module Desiru
             count += 1
           end
 
-          count > 0 ? total_duration / count : 0
+          count.positive? ? total_duration / count : 0
         end
       end
     end

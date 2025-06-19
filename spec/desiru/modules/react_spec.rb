@@ -224,7 +224,7 @@ RSpec.describe Desiru::Modules::ReAct do
             {
               next_thought: "Iteration #{iteration}",
               next_tool_name: "get_weather",
-              next_tool_args: '{"city": "City' + iteration.to_s + '"}'
+              next_tool_args: "{\"city\": \"City#{iteration}\"}"
             }
           else
             # Extract phase after max iterations

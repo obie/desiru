@@ -114,29 +114,35 @@ RSpec.describe 'SSE Format Validation' do
   end
 
   describe 'SSE format helper' do
-    class SSEFormatter
-      def self.format_event(event_type, data)
-        output = []
-        output << "event: #{event_type}"
-        output << "data: #{JSON.generate(data)}"
-        output.join("\n") + "\n\n"
-      end
+    let(:sse_formatter_class) do
+      Class.new do
+        def self.format_event(event_type, data)
+          output = []
+          output << "event: #{event_type}"
+          output << "data: #{JSON.generate(data)}"
+          "#{output.join("\n")}\n\n"
+        end
 
-      def self.format_chunk(chunk_data)
-        format_event('chunk', chunk_data)
-      end
+        def self.format_chunk(chunk_data)
+          format_event('chunk', chunk_data)
+        end
 
-      def self.format_result(result_data)
-        format_event('result', result_data)
-      end
+        def self.format_result(result_data)
+          format_event('result', result_data)
+        end
 
-      def self.format_done
-        format_event('done', { status: 'complete' })
-      end
+        def self.format_done
+          format_event('done', { status: 'complete' })
+        end
 
-      def self.format_error(error_message)
-        format_event('error', { error: error_message })
+        def self.format_error(error_message)
+          format_event('error', { error: error_message })
+        end
       end
+    end
+
+    before do
+      stub_const('SSEFormatter', sse_formatter_class)
     end
 
     it 'formats events correctly' do

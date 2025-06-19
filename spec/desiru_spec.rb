@@ -15,7 +15,7 @@ RSpec.describe Desiru do
       described_class.configure do |config|
         config.default_model = model
       end
-      expect(Desiru.configuration.default_model).to eq(model)
+      expect(described_class.configuration.default_model).to eq(model)
     end
   end
 

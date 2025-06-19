@@ -83,6 +83,7 @@ module Desiru
     # In-memory backend implementation for development and testing
     class InMemoryBackend < Backend
       def initialize(distance_metric: :cosine)
+        super()
         @documents = []
         @embeddings = []
         @distance_metric = distance_metric
