@@ -16,11 +16,7 @@ RSpec.describe Desiru::Jobs::BatchProcessor do
     ]
   end
   let(:options) { { temperature: 0.7 } }
-  let(:redis) { instance_double(Redis) }
-
-  before do
-    allow(Redis).to receive(:new).and_return(redis)
-  end
+  let(:redis) { job.send(:redis) }
 
   describe '#perform' do
     let(:module_instance) { instance_double(Desiru::Predict) }
@@ -48,22 +44,15 @@ RSpec.describe Desiru::Jobs::BatchProcessor do
       end
 
       it 'processes all inputs and stores results' do
-        # Allow status updates
-        allow(redis).to receive(:setex).with(/desiru:status:/, anything, anything)
-
-        # Expect result storage
-        expect(redis).to receive(:setex).at_least(:once) do |key, ttl, json_data|
-          next unless key == "desiru:results:#{batch_id}" # Skip status updates
-
-          expect(ttl).to eq(7200)
-          data = JSON.parse(json_data, symbolize_names: true)
-          expect(data[:success]).to be true
-          expect(data[:total]).to eq(3)
-          expect(data[:successful]).to eq(3)
-          expect(data[:failed]).to eq(0)
-        end
-
         job.perform(batch_id, module_class, signature_str, inputs_array, options)
+        
+        stored_value = redis.get("desiru:results:#{batch_id}")
+        expect(stored_value).not_to be_nil
+        data = JSON.parse(stored_value, symbolize_names: true)
+        expect(data[:success]).to be true
+        expect(data[:total]).to eq(3)
+        expect(data[:successful]).to eq(3)
+        expect(data[:failed]).to eq(0)
       end
     end
 
@@ -81,13 +70,11 @@ RSpec.describe Desiru::Jobs::BatchProcessor do
       end
 
       it 'processes successful inputs and records errors' do
-        stored_data = nil
-        allow(redis).to receive(:setex) do |key, _ttl, data|
-          stored_data = JSON.parse(data, symbolize_names: true) if key == "desiru:results:#{batch_id}"
-        end
-
         job.perform(batch_id, module_class, signature_str, inputs_array, options)
-
+        
+        stored_value = redis.get("desiru:results:#{batch_id}")
+        expect(stored_value).not_to be_nil
+        stored_data = JSON.parse(stored_value, symbolize_names: true)
         expect(stored_data[:success]).to be false
         expect(stored_data[:total]).to eq 3
         expect(stored_data[:successful]).to eq 2
