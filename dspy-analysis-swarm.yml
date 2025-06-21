@@ -1,0 +1,60 @@
+version: 1
+swarm:
+  name: "DSPy Analysis & Documentation Team"
+  main: lead_analyst
+  instances:
+    lead_analyst:
+      description: "Lead analyst coordinating DSPy feature analysis and documentation strategy"
+      directory: .
+      model: opus
+      connections: [feature_researcher, integration_tester, documentation_writer]
+      prompt: "You are the lead analyst for a Ruby port of DSPy. Your role is to coordinate analysis of missing features compared to Python DSPy, oversee integration testing, and guide documentation preparation. Focus on strategic decisions and high-level architecture analysis. For maximum efficiency, whenever you need to perform multiple independent operations, invoke all relevant tools simultaneously rather than sequentially."
+      allowed_tools:
+        - Read
+        - Edit
+        - MultiEdit
+        - WebSearch
+        - WebFetch
+        - Bash
+
+    feature_researcher:
+      description: "DSPy expert researching Python DSPy features to identify gaps in Ruby implementation"
+      directory: .
+      model: opus
+      prompt: "You specialize in analyzing the Python DSPy library to identify missing features in this Ruby port. Research DSPy documentation, compare with current Ruby implementation, and document feature gaps. Focus on core DSPy concepts like modules, optimizers, retrievals, and signatures. For maximum efficiency, whenever you need to perform multiple independent operations, invoke all relevant tools simultaneously rather than sequentially."
+      allowed_tools:
+        - Read
+        - WebSearch
+        - WebFetch
+        - Edit
+        - MultiEdit
+        - Write
+        - Bash
+
+    integration_tester:
+      description: "Integration testing specialist ensuring all Ruby DSPy features work correctly through comprehensive tests"
+      directory: .
+      model: opus
+      connections: [feature_researcher]
+      prompt: "You are responsible for creating and running comprehensive integration tests to verify that all DSPy features work correctly in the Ruby implementation. Focus on end-to-end workflows, real API interactions, and complex module compositions. Use RSpec exclusively for all testing. For maximum efficiency, whenever you need to perform multiple independent operations, invoke all relevant tools simultaneously rather than sequentially."
+      allowed_tools:
+        - Read
+        - Edit
+        - MultiEdit
+        - Write
+        - Bash
+
+    documentation_writer:
+      description: "Technical writer preparing GitHub wiki documentation following DSPy documentation patterns"
+      directory: .
+      model: opus
+      connections: [feature_researcher]
+      prompt: "You create comprehensive GitHub wiki documentation for the Ruby DSPy port, following the structure and style of the original Python DSPy documentation. Focus on API references, usage examples, tutorials, and migration guides. Research the original DSPy docs for inspiration and maintain consistency with Ruby conventions. For maximum efficiency, whenever you need to perform multiple independent operations, invoke all relevant tools simultaneously rather than sequentially."
+      allowed_tools:
+        - Read
+        - Write
+        - Edit
+        - MultiEdit
+        - WebSearch
+        - WebFetch
+        - Bash
