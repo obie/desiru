@@ -45,7 +45,7 @@ RSpec.describe Desiru::Jobs::BatchProcessor do
 
       it 'processes all inputs and stores results' do
         job.perform(batch_id, module_class, signature_str, inputs_array, options)
-        
+
         stored_value = redis.get("desiru:results:#{batch_id}")
         expect(stored_value).not_to be_nil
         data = JSON.parse(stored_value, symbolize_names: true)
@@ -71,7 +71,7 @@ RSpec.describe Desiru::Jobs::BatchProcessor do
 
       it 'processes successful inputs and records errors' do
         job.perform(batch_id, module_class, signature_str, inputs_array, options)
-        
+
         stored_value = redis.get("desiru:results:#{batch_id}")
         expect(stored_value).not_to be_nil
         stored_data = JSON.parse(stored_value, symbolize_names: true)

@@ -28,7 +28,7 @@ RSpec.describe Desiru::Jobs::AsyncPredict do
 
       it 'executes the module and stores the result' do
         job.perform(job_id, module_class, signature_str, inputs, options)
-        
+
         stored_value = redis.get("desiru:results:#{job_id}")
         expect(stored_value).not_to be_nil
         data = JSON.parse(stored_value, symbolize_names: true)
@@ -50,7 +50,7 @@ RSpec.describe Desiru::Jobs::AsyncPredict do
       it 'stores the error and re-raises' do
         expect { job.perform(job_id, module_class, signature_str, inputs, options) }
           .to raise_error(StandardError, 'Model error')
-          
+
         stored_value = redis.get("desiru:results:#{job_id}")
         expect(stored_value).not_to be_nil
         data = JSON.parse(stored_value, symbolize_names: true)

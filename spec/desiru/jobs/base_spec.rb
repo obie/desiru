@@ -19,7 +19,7 @@ RSpec.describe Desiru::Jobs::Base do
 
     it 'stores the result in Redis with default TTL' do
       job.send(:store_result, job_id, result)
-      
+
       stored_value = redis.get("desiru:results:#{job_id}")
       expect(stored_value).to eq(result.to_json)
       # MockRedis doesn't track TTL in a way we can easily test
@@ -28,7 +28,7 @@ RSpec.describe Desiru::Jobs::Base do
     it 'stores the result with custom TTL' do
       custom_ttl = 7200
       job.send(:store_result, job_id, result, ttl: custom_ttl)
-      
+
       stored_value = redis.get("desiru:results:#{job_id}")
       expect(stored_value).to eq(result.to_json)
       # MockRedis doesn't track TTL in a way we can easily test
@@ -54,7 +54,7 @@ RSpec.describe Desiru::Jobs::Base do
       before do
         redis.flushdb # Clear any existing data
       end
-      
+
       it 'returns nil' do
         result = job.send(:fetch_result, job_id)
         expect(result).to be_nil
