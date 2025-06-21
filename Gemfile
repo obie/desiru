@@ -25,11 +25,11 @@ group :development, :test do
 end
 
 # LLM interaction dependencies
+gem 'anthropic', '~> 0.3'
 gem 'faraday', '~> 2.0'
 gem 'faraday-retry', '~> 2.0'
-gem 'ruby-openai', '~> 7.0'
-gem 'anthropic', '~> 0.3'
 gem 'open_router', '~> 0.3'
+gem 'ruby-openai', '~> 7.0'
 
 # GraphQL support
 gem 'graphql', '~> 2.0'
