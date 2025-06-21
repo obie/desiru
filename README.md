@@ -266,6 +266,14 @@ curl -X POST http://localhost:9292/api/v1/qa \
   -H "Content-Type: application/json" \
   -d '{"question": "What is Ruby?"}'
 
+# Async request
+curl -X POST http://localhost:9292/api/v1/summarize \
+  -H "Content-Type: application/json" \
+  -d '{"text": "Long text...", "max_words": 100, "async": true}'
+
+# Check job status
+curl http://localhost:9292/api/v1/jobs/JOB_ID
+
 # Check API health
 curl http://localhost:9292/api/v1/health
 ```
@@ -551,61 +559,6 @@ results = executor.execute_batch([
 ])
 ```
 
-### REST API Integration
-
-Desiru provides REST API integration using Grape or Sinatra, allowing you to expose your AI modules as RESTful endpoints:
-
-```ruby
-require 'desiru/api'
-
-# Create modules
-qa_module = Desiru::Modules::Predict.new(
-  'question: string -> answer: string'
-)
-
-summarizer = Desiru::Modules::ChainOfThought.new(
-  'text: string, max_words: int -> summary: string'
-)
-
-# Create REST API
-api = Desiru::API.create(async_enabled: true) do
-  register_module '/qa', qa_module, 
-    description: 'Answer questions'
-  
-  register_module '/summarize', summarizer,
-    description: 'Summarize text'
-end
-
-# Run as Rack application
-run api.to_rack_app
-```
-
-Features include:
-- **Automatic endpoint generation** from Desiru signatures
-- **Parameter validation** based on signature types
-- **Async request support** with job tracking
-- **Streaming responses** via Server-Sent Events
-- **CORS support** out of the box
-- **Extensible middleware** for auth, rate limiting, etc.
-
-#### REST API Examples
-
-```bash
-# Synchronous request
-curl -X POST http://localhost:9292/api/v1/qa \
-  -H "Content-Type: application/json" \
-  -d '{"question": "What is Ruby?"}'
-
-# Async request
-curl -X POST http://localhost:9292/api/v1/summarize \
-  -H "Content-Type: application/json" \
-  -d '{"text": "Long text...", "max_words": 100, "async": true}'
-
-# Check job status
-curl http://localhost:9292/api/v1/jobs/JOB_ID
-```
-
-See `examples/rest_api.rb` for a complete example and `examples/rest_api_advanced.rb` for production features like authentication and rate limiting.
 
 ## Examples
 
