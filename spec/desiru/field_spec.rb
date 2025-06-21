@@ -31,16 +31,16 @@ RSpec.describe Desiru::Field do
     end
   end
 
-  describe '#validate' do
+  describe '#valid?' do
     context 'with string type' do
       let(:field) { described_class.new('name', :string) }
 
       it 'accepts string values' do
-        expect { field.validate('John') }.not_to raise_error
+        expect { field.valid?('John') }.not_to raise_error
       end
 
       it 'rejects non-string values' do
-        expect { field.validate(123) }.to raise_error(Desiru::ValidationError, /must be a string/)
+        expect { field.valid?(123) }.to raise_error(Desiru::ValidationError, /must be a string/)
       end
     end
 
@@ -48,11 +48,11 @@ RSpec.describe Desiru::Field do
       let(:field) { described_class.new('age', :int) }
 
       it 'accepts integer values' do
-        expect { field.validate(25) }.not_to raise_error
+        expect { field.valid?(25) }.not_to raise_error
       end
 
       it 'rejects non-integer values' do
-        expect { field.validate('25') }.to raise_error(Desiru::ValidationError, /must be an integer/)
+        expect { field.valid?('25') }.to raise_error(Desiru::ValidationError, /must be an integer/)
       end
     end
 
@@ -60,15 +60,15 @@ RSpec.describe Desiru::Field do
       let(:field) { described_class.new('price', :float) }
 
       it 'accepts float values' do
-        expect { field.validate(19.99) }.not_to raise_error
+        expect { field.valid?(19.99) }.not_to raise_error
       end
 
       it 'accepts integer values' do
-        expect { field.validate(20) }.not_to raise_error
+        expect { field.valid?(20) }.not_to raise_error
       end
 
       it 'rejects non-numeric values' do
-        expect { field.validate('19.99') }.to raise_error(Desiru::ValidationError, /must be a float/)
+        expect { field.valid?('19.99') }.to raise_error(Desiru::ValidationError, /must be a float/)
       end
     end
 
@@ -76,11 +76,11 @@ RSpec.describe Desiru::Field do
       let(:field) { described_class.new('tags', :list) }
 
       it 'accepts array values' do
-        expect { field.validate(%w[ruby dspy]) }.not_to raise_error
+        expect { field.valid?(%w[ruby dspy]) }.not_to raise_error
       end
 
       it 'rejects non-array values' do
-        expect { field.validate('ruby,dspy') }.to raise_error(Desiru::ValidationError, /must be a list/)
+        expect { field.valid?('ruby,dspy') }.to raise_error(Desiru::ValidationError, /must be a list/)
       end
     end
 
@@ -88,11 +88,11 @@ RSpec.describe Desiru::Field do
       let(:field) { described_class.new('nickname', :string, optional: true) }
 
       it 'accepts nil values' do
-        expect { field.validate(nil) }.not_to raise_error
+        expect { field.valid?(nil) }.not_to raise_error
       end
 
       it 'validates non-nil values' do
-        expect { field.validate(123) }.to raise_error(Desiru::ValidationError, /must be a string/)
+        expect { field.valid?(123) }.to raise_error(Desiru::ValidationError, /must be a string/)
       end
     end
 
@@ -100,17 +100,17 @@ RSpec.describe Desiru::Field do
       let(:field) { described_class.new('sentiment', :literal, literal_values: %w[positive negative neutral]) }
 
       it 'accepts valid literal values' do
-        expect { field.validate('positive') }.not_to raise_error
-        expect { field.validate('negative') }.not_to raise_error
-        expect { field.validate('neutral') }.not_to raise_error
+        expect { field.valid?('positive') }.not_to raise_error
+        expect { field.valid?('negative') }.not_to raise_error
+        expect { field.valid?('neutral') }.not_to raise_error
       end
 
       it 'rejects invalid literal values' do
-        expect { field.validate('happy') }.to raise_error(Desiru::ValidationError, /must be one of: positive, negative, neutral/)
+        expect { field.valid?('happy') }.to raise_error(Desiru::ValidationError, /must be one of: positive, negative, neutral/)
       end
 
       it 'rejects non-string values' do
-        expect { field.validate(123) }.to raise_error(Desiru::ValidationError, /must be one of: positive, negative, neutral/)
+        expect { field.valid?(123) }.to raise_error(Desiru::ValidationError, /must be one of: positive, negative, neutral/)
       end
     end
 
@@ -121,11 +121,11 @@ RSpec.describe Desiru::Field do
       end
 
       it 'accepts array with valid literal values' do
-        expect { field.validate(%w[yes no yes]) }.not_to raise_error
+        expect { field.valid?(%w[yes no yes]) }.not_to raise_error
       end
 
       it 'rejects array with invalid literal values' do
-        expect { field.validate(%w[yes maybe no]) }
+        expect { field.valid?(%w[yes maybe no]) }
           .to raise_error(Desiru::ValidationError, /must be an array of literal/)
       end
     end

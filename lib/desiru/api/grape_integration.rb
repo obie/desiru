@@ -35,22 +35,23 @@ module Desiru
           prefix :api
           version 'v1', using: :path
 
-          helpers do
-            def grape_type_for(type_string)
-              case type_string.to_s.downcase
-              when 'integer', 'int'
-                Integer
-              when 'float'
-                Float
-              when 'boolean', 'bool'
-                Grape::API::Boolean
-              when /^list/
-                Array
-              else
-                String # Default to String for unknown types (including 'string', 'str')
-              end
+          # Define class method for type conversion
+          def self.grape_type_for(type_string)
+            case type_string.to_s.downcase
+            when 'integer', 'int'
+              Integer
+            when 'float'
+              Float
+            when 'boolean', 'bool'
+              Grape::API::Boolean
+            when /^list/
+              Array
+            else
+              String # Default to String for unknown types (including 'string', 'str')
             end
+          end
 
+          helpers do
             def validate_params(signature, params)
               errors = {}
 
@@ -125,7 +126,18 @@ module Desiru
               # Generate params from signature
               desiru_module.signature.input_fields.each do |name, field|
                 # Convert Desiru types to Grape types
-                grape_type = grape_type_for(field.type)
+                grape_type = case field.type.to_s.downcase
+                             when 'integer', 'int'
+                               Integer
+                             when 'float'
+                               Float
+                             when 'boolean', 'bool'
+                               Grape::API::Boolean
+                             when /^list/
+                               Array
+                             else
+                               String # Default to String for unknown types (including 'string', 'str')
+                             end
 
                 optional name, type: grape_type, desc: field.description
               end
@@ -147,6 +159,7 @@ module Desiru
               begin
                 if async && params[:async] == true && desiru_module.respond_to?(:call_async)
                   # Handle async request
+                  status 202
                   handle_async_request(desiru_module, inputs)
                 elsif params[:async] == true
                   # Module doesn't support async
@@ -154,6 +167,7 @@ module Desiru
                 else
                   # Synchronous execution
                   result = desiru_module.call(inputs)
+                  status 201
                   format_response(result)
                 end
               rescue StandardError => e
@@ -198,7 +212,18 @@ module Desiru
                 params do
                   desiru_module.signature.input_fields.each do |name, field|
                     # Convert Desiru types to Grape types
-                    grape_type = grape_type_for(field.type)
+                    grape_type = case field.type.to_s.downcase
+                                 when 'integer', 'int'
+                                   Integer
+                                 when 'float'
+                                   Float
+                                 when 'boolean', 'bool'
+                                   Grape::API::Boolean
+                                 when /^list/
+                                   Array
+                                 else
+                                   String # Default to String for unknown types (including 'string', 'str')
+                                 end
 
                     optional name, type: grape_type, desc: field.description
                   end

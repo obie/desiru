@@ -90,7 +90,8 @@ Desiru::Modules::ChainOfThought.new(
 # Multi-language translation
 Desiru::Modules::Predict.new(
   Desiru::Signature.new(
-    "text: string, target_language: Literal['es', 'fr', 'de', 'ja', 'zh'] -> translation: string, detected_language: string",
+    "text: string, target_language: Literal['es', 'fr', 'de', 'ja', 'zh'] -> " \
+    "translation: string, detected_language: string",
     descriptions: {
       text: 'Text to translate',
       target_language: 'Target language code',

@@ -97,7 +97,7 @@ RSpec.describe Desiru::Persistence::Database, :persistence do
 
     it 'raises an error if not connected' do
       described_class.disconnect
-      expect { described_class.transaction {} }.to raise_error('Not connected to database')
+      expect { described_class.transaction { 1 + 1 } }.to raise_error('Not connected to database')
     end
   end
 end

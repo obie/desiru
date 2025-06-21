@@ -21,7 +21,7 @@ module Desiru
       @validator = validator || default_validator
     end
 
-    def validate(value)
+    def valid?(value)
       return true if optional && value.nil?
       return true if value.nil? && !default.nil?
 
@@ -65,8 +65,9 @@ module Desiru
           array_value.map do |elem|
             coerced_elem = elem.to_s
             unless element_type[:literal_values].include?(coerced_elem)
+              allowed = element_type[:literal_values].join(', ')
               raise ValidationError,
-                    "Array element '#{coerced_elem}' is not one of allowed values: #{element_type[:literal_values].join(', ')}"
+                    "Array element '#{coerced_elem}' is not one of allowed values: #{allowed}"
             end
 
             coerced_elem
@@ -148,25 +149,25 @@ module Desiru
     def default_validator
       case type
       when :string
-        ->(v) { v.is_a?(String) }
+        ->(value) { value.is_a?(String) }
       when :int
-        ->(v) { v.is_a?(Integer) }
+        ->(value) { value.is_a?(Integer) }
       when :float
-        ->(v) { v.is_a?(Float) || v.is_a?(Integer) }
+        ->(value) { value.is_a?(Float) || value.is_a?(Integer) }
       when :bool
-        ->(v) { v.is_a?(TrueClass) || v.is_a?(FalseClass) }
+        ->(value) { value.is_a?(TrueClass) || value.is_a?(FalseClass) }
       when :literal
-        ->(v) { v.is_a?(String) && literal_values.include?(v) }
+        ->(value) { value.is_a?(String) && literal_values.include?(value) }
       when :list
         if element_type && element_type[:type] == :literal
-          ->(v) { v.is_a?(Array) && v.all? { |elem| element_type[:literal_values].include?(elem.to_s) } }
+          ->(value) { value.is_a?(Array) && value.all? { |elem| element_type[:literal_values].include?(elem.to_s) } }
         else
-          ->(v) { v.is_a?(Array) }
+          ->(value) { value.is_a?(Array) }
         end
       when :hash
-        ->(v) { v.is_a?(Hash) }
+        ->(value) { value.is_a?(Hash) }
       else
-        ->(_v) { true }
+        ->(_value) { true }
       end
     end
   end

@@ -175,7 +175,9 @@ puts
 
 # Example 3: Code Reviewer with suggestions
 puts "3. Code Reviewer - With Suggestions:"
-code_reviewer = CodeReviewer.new('code:str, language:str -> code:str, language:str, issues:list, suggestions:list, score:int')
+code_reviewer = CodeReviewer.new(
+  'code:str, language:str -> code:str, language:str, issues:list, suggestions:list, score:int'
+)
 code = <<~RUBY
   def calculate_sum(numbers)
     # TODO: Add validation

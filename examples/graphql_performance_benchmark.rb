@@ -14,7 +14,7 @@ require 'benchmark'
 # Mock model for benchmarking
 class MockModel < Desiru::Models::Base
   def initialize(config = {})
-    super(config)
+    super
   end
 
   def call(_prompt, **_options)
@@ -34,31 +34,35 @@ end
 
 # Create a module that tracks call counts
 class BenchmarkModule < Desiru::Modules::Predict
-  @@call_count = 0
-  @@batch_count = 0
+  @call_count = 0
+  @batch_count = 0
 
-  def self.reset_counts!
-    @@call_count = 0
-    @@batch_count = 0
-  end
+  class << self
+    attr_reader :call_count, :batch_count
 
-  def self.call_count
-    @@call_count
-  end
+    def reset_counts!
+      @call_count = 0
+      @batch_count = 0
+    end
 
-  def self.batch_count
-    @@batch_count
+    def increment_call_count
+      @call_count += 1
+    end
+
+    def increment_batch_count
+      @batch_count += 1
+    end
   end
 
   def call(inputs)
-    @@call_count += 1
+    self.class.increment_call_count
     # Simulate some processing time
     sleep(0.001)
     { result: "Processed: #{inputs[:id]}", timestamp: Time.now.to_f }
   end
 
   def batch_forward(inputs_array)
-    @@batch_count += 1
+    self.class.increment_batch_count
     # Simulate batch processing time (more efficient than individual calls)
     sleep(0.001 * Math.log(inputs_array.size + 1))
     inputs_array.map do |inputs|

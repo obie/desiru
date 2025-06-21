@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+set -euo pipefail
+IFS=$'\n\t'
+set -vx
+
+# Install dependencies
+bundle install
+
+# Create .env file if it doesn't exist
+if [ ! -f .env ]; then
+  echo "Creating .env file from .env.example..."
+  cp .env.example .env
+  echo "✓ Created .env file. Please add your API keys."
+else
+  echo "✓ .env file already exists"
+fi
+
+# Create necessary directories
+mkdir -p db
+mkdir -p tmp
+
+echo ""
+echo "Setup complete! Next steps:"
+echo "1. Add your API key to .env file"
+echo "2. Run 'bin/console' to start interactive console"
+echo "3. Run 'bin/examples' to see example usage"
+echo ""

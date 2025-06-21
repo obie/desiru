@@ -88,10 +88,8 @@ module Desiru
 
       def extract_answer(data)
         case data
-        when ModuleResult, ProgramResult
+        when ModuleResult, ProgramResult, Hash
           # Try common answer fields
-          data[:answer] || data[:output] || data[:result] || data.values.first
-        when Hash
           data[:answer] || data[:output] || data[:result] || data.values.first
         else
           data

@@ -50,7 +50,7 @@ class CalculatorTool
 
     # Only allow basic math operations
     if expression =~ %r{^[\d\s\+\-\*/\(\)\.]+$}
-      result = eval(expression)
+      result = eval(expression) # rubocop:disable Security/Eval
       "Result: #{result}"
     else
       "Error: Invalid expression. Only numbers and basic operators allowed."
@@ -88,9 +88,9 @@ end
 
 # Configure Desiru
 Desiru.configure do |config|
-  config.default_model = Desiru::Models::RaixAdapter.new(
-    provider: ENV['LLM_PROVIDER'] || 'anthropic',
-    model: ENV['LLM_MODEL'] || 'claude-3-haiku-20240307'
+  config.default_model = Desiru::Models::Anthropic.new(
+    model: ENV['LLM_MODEL'] || 'claude-3-haiku-20240307',
+    api_key: ENV['ANTHROPIC_API_KEY'] || raise('Please set ANTHROPIC_API_KEY environment variable')
   )
 end
 
@@ -137,7 +137,8 @@ complex_agent = Desiru::Modules::ReAct.new(
 )
 
 result = complex_agent.call(
-  query: "I'm planning a trip. Get the weather for London and Sydney, calculate the time difference between GMT and AEST, and tell me what time it is in both cities."
+  query: "I'm planning a trip. Get the weather for London and Sydney, " \
+         "calculate the time difference between GMT and AEST, and tell me what time it is in both cities."
 )
 puts "Query: Planning a trip - need weather and time info for London and Sydney"
 puts "Summary: #{result[:summary]}"

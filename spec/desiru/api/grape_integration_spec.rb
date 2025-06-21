@@ -99,7 +99,7 @@ RSpec.describe Desiru::API::GrapeIntegration do
             puts "Response body: #{last_response.body}"
           end
 
-          expect(last_response).to have_http_status(:created)
+          expect(last_response.status).to eq(201)
           expect(simple_module).to have_received(:call).with({ input: 'test' })
 
           body = JSON.parse(last_response.body)
@@ -109,7 +109,7 @@ RSpec.describe Desiru::API::GrapeIntegration do
         it 'validates required parameters' do
           post '/api/v1/simple', {}.to_json, { 'CONTENT_TYPE' => 'application/json' }
 
-          expect(last_response).to have_http_status(:unprocessable_entity)
+          expect(last_response.status).to eq(422)
           body = JSON.parse(last_response.body)
           expect(body['errors']).to have_key('input')
         end
@@ -121,7 +121,7 @@ RSpec.describe Desiru::API::GrapeIntegration do
             enabled: true
           }.to_json, { 'CONTENT_TYPE' => 'application/json' }
 
-          expect(last_response).to have_http_status(:bad_request)
+          expect(last_response.status).to eq(400)
           body = JSON.parse(last_response.body)
           expect(body['error']).to be_present
         end
@@ -138,7 +138,7 @@ RSpec.describe Desiru::API::GrapeIntegration do
             enabled: true
           }.to_json, { 'CONTENT_TYPE' => 'application/json' }
 
-          expect(last_response).to have_http_status(:created)
+          expect(last_response.status).to eq(201)
           expect(complex_module).to have_received(:call).with({
                                                                 text: 'hello',
                                                                 count: 3,
@@ -155,7 +155,7 @@ RSpec.describe Desiru::API::GrapeIntegration do
 
           post '/api/v1/simple', { input: 'test' }.to_json, { 'CONTENT_TYPE' => 'application/json' }
 
-          expect(last_response).to have_http_status(:internal_server_error)
+          expect(last_response.status).to eq(500)
           body = JSON.parse(last_response.body)
           expect(body['error']).to eq('Test error')
         end
@@ -174,7 +174,7 @@ RSpec.describe Desiru::API::GrapeIntegration do
         it 'supports async requests' do
           post '/api/v1/simple', { input: 'test', async: true }.to_json, { 'CONTENT_TYPE' => 'application/json' }
 
-          expect(last_response).to have_http_status(:created)
+          expect(last_response.status).to eq(202)
           expect(simple_module).to have_received(:call_async).with({ input: 'test' })
 
           body = JSON.parse(last_response.body)
@@ -194,7 +194,7 @@ RSpec.describe Desiru::API::GrapeIntegration do
 
           get '/api/v1/jobs/job123'
 
-          expect(last_response).to have_http_status(:ok)
+          expect(last_response.status).to eq(200)
           body = JSON.parse(last_response.body)
           expect(body['status']).to eq('completed')
           expect(body['progress']).to eq(100)
@@ -206,7 +206,7 @@ RSpec.describe Desiru::API::GrapeIntegration do
 
           get '/api/v1/jobs/nonexistent'
 
-          expect(last_response).to have_http_status(:not_found)
+          expect(last_response.status).to eq(404)
           body = JSON.parse(last_response.body)
           expect(body['error']).to eq('Job not found')
         end
@@ -227,7 +227,7 @@ RSpec.describe Desiru::API::GrapeIntegration do
         it 'provides streaming endpoints', skip: 'rack-test does not support streaming responses' do
           post '/api/v1/stream/test', { input: 'test' }.to_json, { 'CONTENT_TYPE' => 'application/json' }
 
-          expect(last_response).to have_http_status(:ok)
+          expect(last_response.status).to eq(200)
           expect(last_response.headers['Content-Type']).to include('text/event-stream')
 
           # Parse SSE response

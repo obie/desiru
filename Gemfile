@@ -8,11 +8,13 @@ ruby '>= 3.2.0'
 gemspec
 
 group :development, :test do
+  gem 'dotenv', '~> 3.0'
   gem 'mock_redis', '~> 0.40'
   gem 'pry', '~> 0.14'
   gem 'pry-byebug', '~> 3.10'
   gem 'rack-test', '~> 2.0'
   gem 'rake', '~> 13.0'
+  gem 'rdoc'
   gem 'rspec', '~> 3.0'
   gem 'rubocop', '~> 1.21'
   gem 'rubocop-rake', '~> 0.6'
@@ -23,9 +25,11 @@ group :development, :test do
 end
 
 # LLM interaction dependencies
+gem 'anthropic', '~> 0.3'
 gem 'faraday', '~> 2.0'
 gem 'faraday-retry', '~> 2.0'
-gem 'raix', '~> 0.4'
+gem 'open_router', '~> 0.3'
+gem 'ruby-openai', '~> 7.0'
 
 # GraphQL support
 gem 'graphql', '~> 2.0'

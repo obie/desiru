@@ -16,9 +16,15 @@ module Desiru
         validate_config!
       end
 
-      # Main interface method - must be implemented by subclasses
+      # Main interface method - calls perform_completion with proper message formatting
       def complete(prompt, **options)
-        raise NotImplementedError, 'Subclasses must implement #complete'
+        messages = prepare_messages(prompt, options[:messages])
+
+        with_retry do
+          response = perform_completion(messages, options)
+          increment_stats(response[:usage][:total_tokens]) if response[:usage]
+          response
+        end
       end
 
       # Stream completion - optional implementation
@@ -59,7 +65,7 @@ module Desiru
         {
           model: nil,
           temperature: 0.7,
-          max_tokens: 1000,
+          max_tokens: 4096,
           timeout: 30,
           retry_on_failure: true,
           max_retries: 3
@@ -106,6 +112,34 @@ module Desiru
         base_delay = 2**attempt
         jitter = rand(0..1.0)
         base_delay + jitter
+      end
+
+      # Prepare messages in the expected format
+      def prepare_messages(prompt, additional_messages = nil)
+        messages = []
+
+        # Handle different prompt formats
+        case prompt
+        when String
+          messages << { role: 'user', content: prompt }
+        when Hash
+          messages << { role: 'system', content: prompt[:system] } if prompt[:system]
+          if prompt[:user]
+            messages << { role: 'user', content: prompt[:user] }
+          elsif prompt[:content]
+            messages << { role: 'user', content: prompt[:content] }
+          end
+        end
+
+        # Add any additional messages
+        messages.concat(additional_messages) if additional_messages
+
+        messages
+      end
+
+      # Subclasses must implement this method
+      def perform_completion(messages, options)
+        raise NotImplementedError, 'Subclasses must implement #perform_completion'
       end
     end
   end

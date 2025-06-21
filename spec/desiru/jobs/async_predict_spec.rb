@@ -10,11 +10,7 @@ RSpec.describe Desiru::Jobs::AsyncPredict do
   let(:signature_str) { 'question -> answer' }
   let(:inputs) { { question: 'What is 2+2?' } }
   let(:options) { { temperature: 0.5 } }
-  let(:redis) { instance_double(Redis) }
-
-  before do
-    allow(Redis).to receive(:new).and_return(redis)
-  end
+  let(:redis) { job.send(:redis) }
 
   describe '#perform' do
     let(:module_instance) { instance_double(Desiru::Predict) }
@@ -31,20 +27,13 @@ RSpec.describe Desiru::Jobs::AsyncPredict do
       end
 
       it 'executes the module and stores the result' do
-        # Allow status updates
-        allow(redis).to receive(:setex).with(/desiru:status:/, anything, anything)
-
-        # Expect result storage
-        expect(redis).to receive(:setex).at_least(:once) do |key, ttl, json_data|
-          next unless key == "desiru:results:#{job_id}" # Skip status updates
-
-          expect(ttl).to eq(3600)
-          data = JSON.parse(json_data, symbolize_names: true)
-          expect(data[:success]).to be true
-          expect(data[:result]).to eq(answer: '4')
-        end
-
         job.perform(job_id, module_class, signature_str, inputs, options)
+
+        stored_value = redis.get("desiru:results:#{job_id}")
+        expect(stored_value).not_to be_nil
+        data = JSON.parse(stored_value, symbolize_names: true)
+        expect(data[:success]).to be true
+        expect(data[:result]).to eq(answer: '4')
       end
     end
 
@@ -59,22 +48,15 @@ RSpec.describe Desiru::Jobs::AsyncPredict do
       end
 
       it 'stores the error and re-raises' do
-        # Allow status updates
-        allow(redis).to receive(:setex).with(/desiru:status:/, anything, anything)
-
-        # Expect error result storage
-        expect(redis).to receive(:setex).at_least(:once) do |key, ttl, json_data|
-          next unless key == "desiru:results:#{job_id}" # Skip status updates
-
-          expect(ttl).to eq(3600)
-          data = JSON.parse(json_data, symbolize_names: true)
-          expect(data[:success]).to be false
-          expect(data[:error]).to eq('Model error')
-          expect(data[:error_class]).to eq('StandardError')
-        end
-
         expect { job.perform(job_id, module_class, signature_str, inputs, options) }
           .to raise_error(StandardError, 'Model error')
+
+        stored_value = redis.get("desiru:results:#{job_id}")
+        expect(stored_value).not_to be_nil
+        data = JSON.parse(stored_value, symbolize_names: true)
+        expect(data[:success]).to be false
+        expect(data[:error]).to eq('Model error')
+        expect(data[:error_class]).to eq('StandardError')
       end
     end
   end

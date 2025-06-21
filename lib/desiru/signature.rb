@@ -54,12 +54,12 @@ module Desiru
         super.map(&:to_s)
       end
 
-      def has_key?(key)
+      def key?(key)
         super(key.to_sym)
       end
 
-      alias include? has_key?
-      alias key? has_key?
+      alias include? key?
+      alias has_key? key?
     end
 
     attr_reader :raw_signature
@@ -87,7 +87,7 @@ module Desiru
       parse_signature!
     end
 
-    def validate_inputs(inputs)
+    def valid_inputs?(inputs)
       missing = required_input_fields - inputs.keys.map(&:to_sym)
       raise SignatureError, "Missing required inputs: #{missing.join(', ')}" if missing.any?
 
@@ -96,13 +96,13 @@ module Desiru
         next unless field
 
         # Field.validate will raise ValidationError if validation fails
-        field.validate(value)
+        field.valid?(value)
       end
 
       true
     end
 
-    def validate_outputs(outputs)
+    def valid_outputs?(outputs)
       missing = required_output_fields - outputs.keys.map(&:to_sym)
       raise ValidationError, "Missing required outputs: #{missing.join(', ')}" if missing.any?
 
@@ -111,7 +111,7 @@ module Desiru
         next unless field
 
         # Field.validate will raise ValidationError if validation fails
-        field.validate(value)
+        field.valid?(value)
       end
 
       true

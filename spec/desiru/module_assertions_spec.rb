@@ -5,30 +5,39 @@ require 'desiru'
 
 RSpec.describe 'Module with Assertions' do
   # Test module that uses assertions
-  class TestAssertionModule < Desiru::Module
-    def forward(input:, confidence: nil)
-      result = { output: "Processed: #{input}", confidence: confidence || 0.5 }
+  let(:test_assertion_module_class) do
+    Class.new(Desiru::Module) do
+      def forward(input:, confidence: nil)
+        result = { output: "Processed: #{input}", confidence: confidence || 0.5 }
 
-      # Use assertion to enforce confidence threshold
-      Desiru.assert(result[:confidence] > 0.7, "Confidence too low: #{result[:confidence]}")
+        # Use assertion to enforce confidence threshold
+        Desiru.assert(result[:confidence] > 0.7, "Confidence too low: #{result[:confidence]}")
 
-      result
+        result
+      end
     end
   end
 
   # Test module that uses suggestions
-  class TestSuggestionModule < Desiru::Module
-    def forward(input:, sources: nil)
-      result = { output: "Processed: #{input}", sources: sources || [] }
+  let(:test_suggestion_module_class) do
+    Class.new(Desiru::Module) do
+      def forward(input:, sources: nil)
+        result = { output: "Processed: #{input}", sources: sources || [] }
 
-      # Use suggestion for optional validation
-      Desiru.suggest(result[:sources].any?, "No sources provided")
+        # Use suggestion for optional validation
+        Desiru.suggest(result[:sources].any?, "No sources provided")
 
-      result
+        result
+      end
     end
   end
 
-  let(:model) { instance_double(Model, complete: { text: 'response' }) }
+  before do
+    stub_const('TestAssertionModule', test_assertion_module_class)
+    stub_const('TestSuggestionModule', test_suggestion_module_class)
+  end
+
+  let(:model) { instance_double(Desiru::Models::Base, complete: { text: 'response' }) }
   let(:logger) { instance_double(Logger, warn: nil, error: nil) }
 
   before do
@@ -122,22 +131,28 @@ RSpec.describe 'Module with Assertions' do
   end
 
   describe 'mixed assertions and suggestions' do
-    class MixedValidationModule < Desiru::Module
-      def forward(input:, confidence: nil, sources: nil)
-        result = {
-          output: "Processed: #{input}",
-          confidence: confidence || 0.5,
-          sources: sources || []
-        }
+    let(:mixed_validation_module_class) do
+      Class.new(Desiru::Module) do
+        def forward(input:, confidence: nil, sources: nil)
+          result = {
+            output: "Processed: #{input}",
+            confidence: confidence || 0.5,
+            sources: sources || []
+          }
 
-        # Hard assertion
-        Desiru.assert(result[:confidence] > 0.7, "Confidence too low")
+          # Hard assertion
+          Desiru.assert(result[:confidence] > 0.7, "Confidence too low")
 
-        # Soft suggestion
-        Desiru.suggest(result[:sources].any?, "Consider adding sources")
+          # Soft suggestion
+          Desiru.suggest(result[:sources].any?, "Consider adding sources")
 
-        result
+          result
+        end
       end
+    end
+
+    before do
+      stub_const('MixedValidationModule', mixed_validation_module_class)
     end
 
     let(:signature) { Desiru::Signature.new('input:str, confidence:float, sources:list[str] -> output:str, confidence:float, sources:list[str]') }

@@ -17,15 +17,15 @@ RSpec.describe Desiru::Jobs::Retriable do
       )
 
       # Define the base perform method
-      def perform_base(_job_id, should_fail = false, error_class = StandardError)
+      def perform_base(_job_id, should_fail = false, error_class = StandardError) # rubocop:disable Style/OptionalBooleanParameter
         raise error_class, "Test error" if should_fail
 
         "Success"
       end
 
       # Alias it properly for the retriable mixin
-      alias perform_without_retries perform_base
-      alias perform perform_with_retries
+      alias_method :perform_without_retries, :perform_base
+      alias_method :perform, :perform_with_retries
     end
   end
 

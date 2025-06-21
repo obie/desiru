@@ -102,25 +102,25 @@ RSpec.describe Desiru::Signature do
     end
   end
 
-  describe '#validate_inputs' do
+  describe '#valid_inputs?' do
     let(:signature) { described_class.new('question: string, count: int -> answer') }
 
     it 'validates correct inputs' do
-      expect { signature.validate_inputs(question: 'What is DSPy?', count: 5) }.not_to raise_error
+      expect { signature.valid_inputs?(question: 'What is DSPy?', count: 5) }.not_to raise_error
     end
 
     it 'raises error for missing required inputs' do
-      expect { signature.validate_inputs(question: 'What is DSPy?') }
+      expect { signature.valid_inputs?(question: 'What is DSPy?') }
         .to raise_error(Desiru::SignatureError, /Missing required inputs: count/)
     end
 
     it 'raises error for wrong input types' do
-      expect { signature.validate_inputs(question: 'What is DSPy?', count: 'five') }
+      expect { signature.valid_inputs?(question: 'What is DSPy?', count: 'five') }
         .to raise_error(Desiru::ValidationError, /count must be an integer/)
     end
 
     it 'ignores extra inputs' do
-      expect { signature.validate_inputs(question: 'What is DSPy?', count: 5, extra: 'ignored') }
+      expect { signature.valid_inputs?(question: 'What is DSPy?', count: 5, extra: 'ignored') }
         .not_to raise_error
     end
 
@@ -128,22 +128,22 @@ RSpec.describe Desiru::Signature do
       let(:literal_sig) { described_class.new("sentiment: Literal['positive', 'negative', 'neutral'] -> score: float") }
 
       it 'validates correct literal value' do
-        expect { literal_sig.validate_inputs(sentiment: 'positive') }.not_to raise_error
+        expect { literal_sig.valid_inputs?(sentiment: 'positive') }.not_to raise_error
       end
 
       it 'raises error for invalid literal value' do
-        expect { literal_sig.validate_inputs(sentiment: 'happy') }
+        expect { literal_sig.valid_inputs?(sentiment: 'happy') }
           .to raise_error(Desiru::ValidationError, /sentiment must be one of/)
       end
 
       it 'validates literal values in arrays' do
         array_sig = described_class.new("responses: List[Literal['yes', 'no']] -> summary: string")
-        expect { array_sig.validate_inputs(responses: %w[yes no yes]) }.not_to raise_error
+        expect { array_sig.valid_inputs?(responses: %w[yes no yes]) }.not_to raise_error
       end
 
       it 'raises error for invalid literal values in arrays' do
         array_sig = described_class.new("responses: List[Literal['yes', 'no']] -> summary: string")
-        expect { array_sig.validate_inputs(responses: %w[yes maybe no]) }
+        expect { array_sig.valid_inputs?(responses: %w[yes maybe no]) }
           .to raise_error(Desiru::ValidationError, /responses must be an array of literal values/)
       end
     end
@@ -191,20 +191,20 @@ RSpec.describe Desiru::Signature do
     end
   end
 
-  describe '#validate_outputs' do
+  describe '#valid_outputs?' do
     let(:signature) { described_class.new('question -> answer: string, confidence: float') }
 
     it 'validates correct outputs' do
-      expect { signature.validate_outputs(answer: 'DSPy is a framework', confidence: 0.95) }.not_to raise_error
+      expect { signature.valid_outputs?(answer: 'DSPy is a framework', confidence: 0.95) }.not_to raise_error
     end
 
     it 'raises error for missing required outputs' do
-      expect { signature.validate_outputs(answer: 'DSPy is a framework') }
+      expect { signature.valid_outputs?(answer: 'DSPy is a framework') }
         .to raise_error(Desiru::ValidationError, /Missing required outputs: confidence/)
     end
 
     it 'raises error for wrong output types' do
-      expect { signature.validate_outputs(answer: 'DSPy is a framework', confidence: 'high') }
+      expect { signature.valid_outputs?(answer: 'DSPy is a framework', confidence: 'high') }
         .to raise_error(Desiru::ValidationError, /confidence must be a float/)
     end
   end

@@ -8,8 +8,10 @@ require 'desiru/graphql/executor'
 
 # Configure Desiru
 Desiru.configure do |config|
-  # Use a mock model for demonstration
-  config.default_model = Desiru::Models::RaixAdapter.new
+  # Use OpenAI model for demonstration
+  config.default_model = Desiru::Models::OpenAI.new(
+    api_key: ENV['OPENAI_API_KEY'] || raise('Please set OPENAI_API_KEY environment variable')
+  )
 end
 
 # Create some example modules

@@ -1,0 +1,203 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require "bundler/setup"
+
+# Load environment variables from .env file
+require "dotenv"
+if File.exist?('.env')
+  Dotenv.load
+  puts "✓ Loaded .env file"
+else
+  puts "⚠️  No .env file found. Run 'bin/setup' to create one."
+end
+
+require "desiru"
+require "irb"
+
+# Configure Desiru with a default model for convenience
+# You can override this by setting ANTHROPIC_API_KEY or OPENAI_API_KEY environment variables
+begin
+  configured = false
+  
+  if ENV['ANTHROPIC_API_KEY'] && !ENV['ANTHROPIC_API_KEY'].empty?
+    begin
+      Desiru.configure do |config|
+        config.default_model = Desiru::Models::Anthropic.new(
+          api_key: ENV['ANTHROPIC_API_KEY'],
+          model: 'claude-3-haiku-20240307',
+          max_tokens: 4096
+        )
+      end
+      puts "✓ Configured with Anthropic Claude (#{ENV['ANTHROPIC_API_KEY'][0..7]}...)"
+      configured = true
+    rescue => e
+      puts "⚠️  Failed to configure Anthropic: #{e.message}"
+    end
+  end
+  
+  if !configured && ENV['OPENAI_API_KEY'] && !ENV['OPENAI_API_KEY'].empty?
+    begin
+      Desiru.configure do |config|
+        config.default_model = Desiru::Models::OpenAI.new(
+          api_key: ENV['OPENAI_API_KEY'],
+          model: 'gpt-4o-mini',
+          max_tokens: 4096
+        )
+      end
+      puts "✓ Configured with OpenAI (#{ENV['OPENAI_API_KEY'][0..7]}...)"
+      configured = true
+    rescue => e
+      puts "⚠️  Failed to configure OpenAI: #{e.message}"
+    end
+  end
+  
+  if !configured && ENV['OPENROUTER_API_KEY'] && !ENV['OPENROUTER_API_KEY'].empty?
+    begin
+      Desiru.configure do |config|
+        config.default_model = Desiru::Models::OpenRouter.new(
+          api_key: ENV['OPENROUTER_API_KEY'],
+          model: 'anthropic/claude-3-haiku',
+          max_tokens: 4096
+        )
+      end
+      puts "✓ Configured with OpenRouter (#{ENV['OPENROUTER_API_KEY'][0..7]}...)"
+      configured = true
+    rescue => e
+      puts "⚠️  Failed to configure OpenRouter: #{e.message}"
+    end
+  end
+  
+  unless configured
+    puts "⚠️  No API key found or all configurations failed."
+    puts "   Set ANTHROPIC_API_KEY, OPENAI_API_KEY, or OPENROUTER_API_KEY to use LLM features."
+    puts "   You can still explore Desiru's structure and create modules."
+  end
+rescue => e
+  puts "⚠️  Unexpected error during configuration: #{e.message}"
+  puts e.backtrace.first(5)
+end
+
+# Helper method to create the README example
+def readme_example
+  # Multi-hop question answering module
+  qa_module = ChainOfThought.new(
+    Signature.new('question -> answer')
+  )
+
+  # Use the module
+  result = qa_module.call(
+    question: "What are the main features of Ruby 3.4?"
+  )
+
+  puts "\nQuestion: What are the main features of Ruby 3.4?"
+  puts "Answer: #{result.answer}"
+  puts "\nReasoning:"
+  puts result[:reasoning] if result[:reasoning]
+  
+  result
+end
+
+# Helper method to create a simple prediction module
+def simple_predict(prompt)
+  module_instance = Predict.new(
+    Signature.new('input -> output')
+  )
+  
+  result = module_instance.call(input: prompt)
+  puts result.output
+  result
+end
+
+# Helper to demonstrate typed signatures
+def typed_example
+  sentiment = Predict.new(
+    Signature.new(
+      "text: string -> sentiment: Literal['positive', 'negative', 'neutral'], confidence: float"
+    )
+  )
+  
+  result = sentiment.call(text: "I love this new framework!")
+  puts "Sentiment: #{result.sentiment} (confidence: #{result.confidence})"
+  result
+end
+
+# Print welcome message with examples
+puts <<~WELCOME
+
+  Welcome to Desiru Interactive Console!
+  =====================================
+  
+  Available helper methods:
+  • readme_example()     - Run the example from the README
+  • simple_predict(text) - Simple text completion
+  • typed_example()      - Demonstrate typed signatures
+  
+  Quick examples to try:
+  
+  1. Basic prediction:
+     predict = Predict.new(Signature.new('question -> answer'))
+     result = predict.call(question: "What is Ruby?")
+     puts result.answer
+  
+  2. Chain of Thought:
+     cot = ChainOfThought.new(Signature.new('problem -> solution'))
+     result = cot.call(problem: "How do I reverse a string in Ruby?")
+     puts result.solution
+  
+  3. With demonstrations:
+     math = Predict.new(Signature.new('equation -> result'))
+     math.demos = [
+       {equation: "2 + 2", result: "4"},
+       {equation: "10 - 3", result: "7"}
+     ]
+     result = math.call(equation: "15 + 27")
+     puts result.result
+
+WELCOME
+
+# Make common classes easily accessible
+include Desiru::Modules
+include Desiru
+
+# Debug helper to see raw LLM responses
+def debug_call(module_instance, **inputs)
+  result = module_instance.call(**inputs)
+  puts "=== DEBUG OUTPUT ==="
+  puts "Result class: #{result.class}"
+  puts "Result hash: #{result.to_h.inspect}"
+  puts "Output fields available: #{result.to_h.keys.join(', ')}"
+  puts "==================="
+  result
+end
+
+# Convenience method to reload the library (useful during development)
+def reload!
+  # Remove all Desiru constants
+  Desiru.constants.each do |const|
+    Desiru.send(:remove_const, const) if Desiru.const_defined?(const, false)
+  end
+  
+  # Reload
+  load 'desiru.rb'
+  Dir[File.join(__dir__, '..', 'lib', 'desiru', '**', '*.rb')].each { |f| load f }
+  
+  include Desiru::Modules
+  include Desiru
+  puts "✓ Desiru reloaded!"
+end
+
+# Create some example modules for quick access
+if Desiru.configuration.default_model
+  $predict = Predict.new(Desiru::Signature.new('input -> output'))
+  $cot = ChainOfThought.new(Desiru::Signature.new('question -> answer'))
+  
+  puts "\n  Pre-loaded modules:"
+  puts "  • $predict - Simple prediction module"
+  puts "  • $cot     - Chain of thought module"
+  puts ""
+end
+
+# Start IRB session
+require 'irb/completion'
+IRB.start(__FILE__)

@@ -21,6 +21,7 @@ module Desiru
       def forward(**inputs)
         query = inputs[:query]
         # Handle k parameter - it might come as nil if optional
+        # Note: 'k' is the standard parameter name in information retrieval
         k = inputs.fetch(:k, 5)
         k = 5 if k.nil? # Ensure we have a value even if nil was passed
 
@@ -67,7 +68,7 @@ module Desiru
         raise NotImplementedError, 'Subclasses must implement #add'
       end
 
-      def search(_query, k: 5)
+      def search(_query, k: 5) # rubocop:disable Naming/MethodParameterName
         raise NotImplementedError, 'Subclasses must implement #search'
       end
 
@@ -108,7 +109,7 @@ module Desiru
         @embeddings.concat(embeddings)
       end
 
-      def search(query, k: 5)
+      def search(query, k: 5) # rubocop:disable Naming/MethodParameterName
         return [] if @documents.empty?
 
         # Generate query embedding

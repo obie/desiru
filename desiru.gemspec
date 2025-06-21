@@ -13,7 +13,7 @@ Gem::Specification.new do |spec|
                      'enabling reliable, maintainable, and portable AI programming.'
   spec.homepage = 'https://github.com/obie/desiru'
   spec.license = 'MIT'
-  spec.required_ruby_version = '>= 3.2.0'
+  spec.required_ruby_version = '>= 3.3.0'
 
   spec.metadata['homepage_uri'] = spec.homepage
   spec.metadata['source_code_uri'] = 'https://github.com/obie/desiru'
@@ -36,9 +36,6 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'sidekiq', '~> 7.2'
   spec.add_dependency 'singleton', '~> 0.1'
 
-  # Development dependencies (basic ones, others in Gemfile)
-  spec.add_development_dependency 'bundler', '~> 2.0'
-  spec.add_development_dependency 'rake', '~> 13.0'
-  spec.add_development_dependency 'rspec', '~> 3.0'
+  # Development dependencies moved to Gemfile
   spec.metadata['rubygems_mfa_required'] = 'false'
 end

@@ -129,8 +129,8 @@ RSpec.describe 'Streaming Endpoint SSE Format' do
           raise 'Test error'
         end
 
-        def call_stream(_inputs, &)
-          call(_inputs)
+        def call_stream(inputs, &)
+          call(inputs)
         end
       end.new('input: string -> output: string', model: mock_model)
 

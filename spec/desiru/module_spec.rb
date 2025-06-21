@@ -39,25 +39,25 @@ RSpec.describe Desiru::Module do
 
   describe '#call' do
     it 'validates inputs before processing' do
-      expect(signature).to receive(:validate_inputs).with({ question: 'What is DSPy?' })
-      allow(signature).to receive(:validate_outputs)
+      expect(signature).to receive(:valid_inputs?).with({ question: 'What is DSPy?' })
+      allow(signature).to receive(:valid_outputs?)
       allow(signature).to receive_messages(coerce_inputs: { question: 'What is DSPy?' }, coerce_outputs: { answer: 'Test answer' })
 
       test_module.call(question: 'What is DSPy?')
     end
 
     it 'coerces inputs before processing' do
-      allow(signature).to receive(:validate_inputs)
+      allow(signature).to receive(:valid_inputs?)
       expect(signature).to receive(:coerce_inputs).with({ question: 123 }).and_return(question: '123')
-      allow(signature).to receive(:validate_outputs)
+      allow(signature).to receive(:valid_outputs?)
       allow(signature).to receive(:coerce_outputs).and_return(answer: 'Test answer')
 
       test_module.call(question: 123)
     end
 
     it 'calls forward method with coerced inputs' do
-      allow(signature).to receive(:validate_inputs)
-      allow(signature).to receive(:validate_outputs)
+      allow(signature).to receive(:valid_inputs?)
+      allow(signature).to receive(:valid_outputs?)
       allow(signature).to receive_messages(coerce_inputs: { question: 'What is DSPy?' }, coerce_outputs: { answer: 'DSPy is a framework' })
 
       expect(test_module).to receive(:forward).with({ question: 'What is DSPy?' }).and_call_original
@@ -65,16 +65,16 @@ RSpec.describe Desiru::Module do
     end
 
     it 'validates outputs after processing' do
-      allow(signature).to receive(:validate_inputs)
-      expect(signature).to receive(:validate_outputs).with({ answer: 'Test answer for: What is DSPy?' })
+      allow(signature).to receive(:valid_inputs?)
+      expect(signature).to receive(:valid_outputs?).with({ answer: 'Test answer for: What is DSPy?' })
       allow(signature).to receive_messages(coerce_inputs: { question: 'What is DSPy?' }, coerce_outputs: { answer: 'Test answer' })
 
       test_module.call(question: 'What is DSPy?')
     end
 
     it 'returns ModuleResult with outputs' do
-      allow(signature).to receive(:validate_inputs)
-      allow(signature).to receive(:validate_outputs)
+      allow(signature).to receive(:valid_inputs?)
+      allow(signature).to receive(:valid_outputs?)
       allow(signature).to receive_messages(coerce_inputs: { question: 'What is DSPy?' }, coerce_outputs: { answer: 'DSPy is a framework' })
 
       result = test_module.call(question: 'What is DSPy?')
@@ -83,8 +83,8 @@ RSpec.describe Desiru::Module do
     end
 
     it 'implements retry logic on failure' do
-      allow(signature).to receive(:validate_inputs)
-      allow(signature).to receive(:validate_outputs)
+      allow(signature).to receive(:valid_inputs?)
+      allow(signature).to receive(:valid_outputs?)
       allow(signature).to receive_messages(coerce_inputs: { question: 'What is DSPy?' }, coerce_outputs: { answer: 'Test answer' })
 
       call_count = 0
@@ -101,7 +101,7 @@ RSpec.describe Desiru::Module do
     end
 
     it 'raises error after max retries' do
-      allow(signature).to receive(:validate_inputs)
+      allow(signature).to receive(:valid_inputs?)
       allow(signature).to receive(:coerce_inputs).and_return(question: 'What is DSPy?')
 
       allow(test_module).to receive(:forward).and_raise(StandardError, 'Persistent failure')
