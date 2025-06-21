@@ -13,7 +13,7 @@ Desiru brings the power of DSPy to the Ruby ecosystem, enabling developers to:
 - Build portable AI systems that work across different language models
 - Create maintainable, testable AI applications
 
-Desiru leverages [Raix](https://github.com/OlympiaAI/raix) under the hood as its primary chat completion interface, providing seamless support for OpenAI and OpenRouter APIs with features like streaming, function calling, and prompt caching.
+Desiru provides direct integrations with multiple language model providers including OpenAI, Anthropic, and OpenRouter, with features like streaming, function calling, and prompt caching.
 
 ## Installation
 
