@@ -5,14 +5,25 @@ module Desiru
     # MultiChainComparison module that generates multiple chain-of-thought
     # reasoning paths and compares them to produce the best answer
     class MultiChainComparison < Desiru::Module
+      DEFAULT_SIGNATURE = 'question: string -> answer: string, reasoning: string'
+
       def initialize(signature = nil, model: nil, **kwargs)
+        # Extract our specific options before passing to parent
+        @num_chains = kwargs.delete(:num_chains) || 3
+        @comparison_strategy = kwargs.delete(:comparison_strategy) || :vote
+        @temperature = kwargs.delete(:temperature) || 0.7
+
+        # Use default signature if none provided
+        signature ||= DEFAULT_SIGNATURE
+
+        # Pass remaining kwargs to parent (config, demos, metadata)
         super
-        @num_chains = kwargs[:num_chains] || 3
-        @comparison_strategy = kwargs[:comparison_strategy] || :vote
-        @temperature = kwargs[:temperature] || 0.7
       end
 
       def forward(**inputs)
+        # Handle edge case of zero chains
+        return {} if @num_chains <= 0
+
         # Generate multiple reasoning chains
         chains = generate_chains(inputs)
 
@@ -25,11 +36,14 @@ module Desiru
                       when :confidence
                         select_by_confidence(chains)
                       else
-                        chains.first # Fallback to first chain
+                        chains.first || {} # Fallback to first chain or empty hash
                       end
 
+        # Ensure best_result is not nil
+        best_result ||= {}
+
         # Include comparison metadata if requested
-        if signature.output_fields.key?(:comparison_data)
+        if signature.output_fields.key?('comparison_data') || signature.output_fields.key?(:comparison_data)
           best_result[:comparison_data] = {
             num_chains: chains.length,
             strategy: @comparison_strategy,
@@ -77,7 +91,7 @@ module Desiru
         if signature.output_fields.any?
           prompt += "\nMake sure your answer includes:\n"
           signature.output_fields.each do |name, field|
-            next if %i[reasoning comparison_data].include?(name)
+            next if %w[reasoning comparison_data].include?(name.to_s)
 
             prompt += "- #{name}: #{field.description || field.type}\n"
           end
@@ -95,15 +109,33 @@ module Desiru
 
         # Extract answer
         answer_match = response.match(/ANSWER:\s*(.+)/mi)
-        answer_text = answer_match ? answer_match[1].strip : ""
 
-        # Try to parse structured answer
-        if answer_text.include?(':') || answer_text.include?('{')
-          result.merge!(parse_structured_answer(answer_text))
+        if answer_match
+          answer_text = answer_match[1].strip
+
+          # Try to parse structured answer
+          if answer_text.include?(':') || answer_text.include?('{')
+            result.merge!(parse_structured_answer(answer_text))
+          elsif !answer_text.empty?
+            # Single value answer
+            main_output_field = signature.output_fields.keys.map(&:to_sym).find do |k|
+              !%i[reasoning comparison_data].include?(k)
+            end
+            result[main_output_field] = answer_text if main_output_field
+          end
         else
-          # Single value answer
-          main_output_field = signature.output_fields.keys.find { |k| !%i[reasoning comparison_data].include?(k) }
-          result[main_output_field] = answer_text if main_output_field
+          # No ANSWER: section found - check if we should extract from reasoning
+          signature.output_fields.keys.map(&:to_sym).find do |k|
+            !%i[reasoning comparison_data].include?(k)
+          end
+          # Don't set the field if there's no clear answer
+          # result[main_output_field] = nil if main_output_field
+        end
+
+        # Parse any additional fields that might be in the response
+        response.scan(/(\w+):\s*([^\n]+)/).each do |key, value|
+          key_sym = key.downcase.to_sym
+          result[key_sym] = value.strip if signature.output_fields.key?(key_sym) && !result.key?(key_sym)
         end
 
         result
@@ -115,31 +147,42 @@ module Desiru
         # Try to parse as key-value pairs
         answer_text.scan(/(\w+):\s*([^\n,}]+)/).each do |key, value|
           key_sym = key.downcase.to_sym
-          parsed[key_sym] = value.strip if signature.output_fields.key?(key_sym)
+          if signature.output_fields.key?(key_sym) || signature.output_fields.key?(key.downcase)
+            parsed[key_sym] =
+              value.strip
+          end
         end
 
         parsed
       end
 
       def vote_on_chains(chains)
+        return {} if chains.empty?
+
         # Count votes for each unique answer
         votes = Hash.new(0)
         answer_to_chain = {}
 
         chains.each do |chain|
           # Get the main answer field (first non-metadata field)
-          answer_key = signature.output_fields.keys.find { |k| !%i[reasoning comparison_data].include?(k) }
+          answer_key = signature.output_fields.keys.map(&:to_sym).find do |k|
+            !%i[reasoning comparison_data].include?(k)
+          end
           answer_value = chain[answer_key]
 
-          if answer_value
+          if answer_value && !answer_value.to_s.empty?
             votes[answer_value] += 1
             answer_to_chain[answer_value] ||= chain
           end
         end
 
         # Return the chain with the most common answer
-        winning_answer = votes.max_by { |_, count| count }&.first
-        answer_to_chain[winning_answer] || chains.first
+        if votes.empty?
+          chains.first || {}
+        else
+          winning_answer = votes.max_by { |_, count| count }.first
+          answer_to_chain[winning_answer] || chains.first || {}
+        end
       end
 
       def llm_judge_chains(chains, original_inputs)
@@ -157,7 +200,9 @@ module Desiru
           judge_prompt += "\n--- Attempt #{i + 1} ---\n"
           judge_prompt += "Reasoning: #{chain[:reasoning]}\n"
 
-          answer_key = signature.output_fields.keys.find { |k| !%i[reasoning comparison_data].include?(k) }
+          answer_key = signature.output_fields.keys.map(&:to_sym).find do |k|
+            !%i[reasoning comparison_data].include?(k)
+          end
           judge_prompt += "Answer: #{chain[answer_key]}\n" if chain[answer_key]
         end
 
@@ -182,7 +227,9 @@ module Desiru
           confidence_prompt = "Rate your confidence (0-100) in this reasoning and answer:\n"
           confidence_prompt += "Reasoning: #{chain[:reasoning]}\n"
 
-          answer_key = signature.output_fields.keys.find { |k| !%i[reasoning comparison_data].include?(k) }
+          answer_key = signature.output_fields.keys.map(&:to_sym).find do |k|
+            !%i[reasoning comparison_data].include?(k)
+          end
           confidence_prompt += "Answer: #{chain[answer_key]}\n" if chain[answer_key]
 
           confidence_prompt += "\nRespond with just a number between 0 and 100:"
@@ -201,4 +248,9 @@ module Desiru
       end
     end
   end
+end
+
+# Register in the main module namespace for convenience
+module Desiru
+  MultiChainComparison = Modules::MultiChainComparison
 end

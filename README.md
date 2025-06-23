@@ -2,7 +2,7 @@
 
 A Ruby implementation of [DSPy](https://dspy.ai/), the framework for programming—not prompting—language models. Build sophisticated AI systems with modular, composable code instead of brittle prompt strings.
 
-Note: This project is in its earliest stages of development and experimental. Expect many bugs and breaking changes.
+Note: This project is in active development. While core functionality is stable, expect continued rapid evolution and new features.
 
 
 ## Overview
@@ -87,6 +87,12 @@ cot = Desiru::ChainOfThought.new("question -> answer")
 
 # ReAct pattern for tool use
 react = Desiru::ReAct.new("question -> answer", tools: [calculator, search])
+
+# Program of Thought - generates and executes code
+pot = Desiru::ProgramOfThought.new("problem -> solution: float")
+
+# Best of N - samples multiple outputs and selects the best
+best_of_n = Desiru::BestOfN.new("question -> answer", n_samples: 3, selection_criterion: :consistency)
 
 # Compose modules into programs
 class RAGPipeline < Desiru::Program

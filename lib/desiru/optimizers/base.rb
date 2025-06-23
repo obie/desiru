@@ -22,7 +22,21 @@ module Desiru
 
       def evaluate(program, dataset)
         scores = dataset.map do |example|
-          prediction = program.call(example.except(:answer, :output))
+          # Extract inputs (exclude answer/output fields)
+          inputs = {}
+          if example.respond_to?(:to_h)
+            example.to_h.each do |k, v|
+              inputs[k] = v unless %i[answer output].include?(k)
+            end
+          elsif example.is_a?(Hash)
+            example.each do |k, v|
+              inputs[k] = v unless %i[answer output].include?(k.to_sym)
+            end
+          else
+            inputs = example
+          end
+
+          prediction = program.call(inputs)
           score_prediction(prediction, example)
         end
 
@@ -55,6 +69,10 @@ module Desiru
           f1_score(prediction, ground_truth)
         when :accuracy
           accuracy_score(prediction, ground_truth)
+        when :confidence
+          confidence_score(prediction, ground_truth)
+        when :consistency
+          consistency_score(prediction, ground_truth)
         else
           raise OptimizerError, "Unknown metric: #{@metric}"
         end
@@ -84,6 +102,18 @@ module Desiru
 
       def accuracy_score(prediction, ground_truth)
         exact_match_score(prediction, ground_truth)
+      end
+
+      def confidence_score(prediction, ground_truth)
+        # Simple confidence score based on exact match
+        # In a real implementation, this would use model confidence scores
+        (exact_match_score(prediction, ground_truth) * 0.9) + 0.1
+      end
+
+      def consistency_score(prediction, ground_truth)
+        # Simple consistency score based on exact match
+        # In a real implementation, this would track consistency across examples
+        (exact_match_score(prediction, ground_truth) * 0.8) + 0.2
       end
 
       def extract_answer(data)

@@ -2,6 +2,7 @@
 
 require_relative 'async_capable'
 require_relative 'assertions'
+require_relative 'core/traceable'
 
 module Desiru
   # Base class for all Desiru modules
@@ -9,6 +10,7 @@ module Desiru
   class Module
     extend Forwardable
     include AsyncCapable
+    prepend Core::Traceable
 
     attr_reader :signature, :model, :config, :demos, :metadata
 
@@ -215,6 +217,12 @@ module Desiru
         @data[key.to_s]
       end
     end
+
+    def key?(key)
+      @data.key?(key.to_sym) || @data.key?(key.to_s)
+    end
+
+    alias has_key? key?
 
     def method_missing(method_name, *args, &)
       method_str = method_name.to_s
