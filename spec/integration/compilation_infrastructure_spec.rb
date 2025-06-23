@@ -354,7 +354,7 @@ RSpec.describe 'Compilation Infrastructure Integration' do
         end
 
         def update_module(mod_class, new_module)
-          @modules.map! { |m| m.class == mod_class ? new_module : m }
+          @modules.map! { |m| m.instance_of?(mod_class) ? new_module : m }
         end
 
         def to_h

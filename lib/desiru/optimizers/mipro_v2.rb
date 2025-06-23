@@ -459,7 +459,7 @@ module Desiru
       def apply_instruction_changes(program, candidate)
         modules = extract_program_modules(program)
 
-        modules.each do |_name, mod|
+        modules.each_value do |mod|
           next unless mod.respond_to?(:signature)
 
           # Generate instruction based on candidate parameters
@@ -477,7 +477,7 @@ module Desiru
       def apply_demonstration_changes(program, candidate)
         modules = extract_program_modules(program)
 
-        modules.each do |_name, mod|
+        modules.each_value do |mod|
           # Select demonstrations based on candidate strategy
           demos = select_demonstrations(
             mod,
@@ -523,14 +523,19 @@ module Desiru
           "Given #{input_fields.join(', ')}, output #{output_fields.join(', ')}."
         when 'detailed'
           if signature.is_a?(String)
-            "Process the following inputs: #{input_fields.join(', ')}. Generate these outputs: #{output_fields.join(', ')}. Be thorough and accurate."
+            "Process the following inputs: #{input_fields.join(', ')}. " \
+              "Generate these outputs: #{output_fields.join(', ')}. Be thorough and accurate."
           else
             input_desc = signature.input_fields.map { |k, f| "#{k} (#{f.type})" }.join(', ')
             output_desc = signature.output_fields.map { |k, f| "#{k} (#{f.type})" }.join(', ')
-            "Process the following inputs: #{input_desc}. Generate these outputs: #{output_desc}. Be thorough and accurate."
+            "Process the following inputs: #{input_desc}. " \
+              "Generate these outputs: #{output_desc}. Be thorough and accurate."
           end
         when 'step-by-step'
-          "Follow these steps:\n1. Analyze the inputs: #{input_fields.join(', ')}\n2. Process the information carefully\n3. Generate outputs: #{output_fields.join(', ')}"
+          "Follow these steps:\n" \
+          "1. Analyze the inputs: #{input_fields.join(', ')}\n" \
+          "2. Process the information carefully\n" \
+          "3. Generate outputs: #{output_fields.join(', ')}"
         else
           base_instruction
         end
@@ -538,7 +543,7 @@ module Desiru
 
       def select_demonstrations(module_instance, examples, count, strategy, seed)
         count ||= 0 # Default count if nil
-        return [] if count == 0 || examples.empty?
+        return [] if count.zero? || examples.empty?
 
         # Use seed for reproducibility
         seed ||= rand # Fallback if seed is nil
@@ -700,14 +705,14 @@ module Desiru
 
       def enable_program_tracing(program)
         modules = extract_program_modules(program)
-        modules.each do |_name, mod|
+        modules.each_value do |mod|
           mod.enable_trace! if mod.respond_to?(:enable_trace!)
         end
       end
 
       def disable_program_tracing(program)
         modules = extract_program_modules(program)
-        modules.each do |_name, mod|
+        modules.each_value do |mod|
           mod.disable_trace! if mod.respond_to?(:disable_trace!)
         end
       end
@@ -746,7 +751,7 @@ module Desiru
         mean = prediction[:mean]
         std = prediction[:std]
 
-        return 0.0 if std == 0
+        return 0.0 if std.zero?
 
         best_so_far = @optimization_history.map { |h| scalarize_objectives(h[:scores]) }.max || 0
         z = (mean - best_so_far) / std
@@ -763,12 +768,12 @@ module Desiru
         prediction[:mean] + (beta * prediction[:std])
       end
 
-      def standard_normal_pdf(x)
-        Math.exp(-0.5 * (x**2)) / Math.sqrt(2 * Math::PI)
+      def standard_normal_pdf(value)
+        Math.exp(-0.5 * (value**2)) / Math.sqrt(2 * Math::PI)
       end
 
-      def standard_normal_cdf(x)
-        0.5 * (1 + Math.erf(x / Math.sqrt(2)))
+      def standard_normal_cdf(value)
+        0.5 * (1 + Math.erf(value / Math.sqrt(2)))
       end
 
       def gaussian_noise(std_dev)
@@ -779,7 +784,7 @@ module Desiru
       end
 
       def constrain(value, min, max)
-        [[value, min].max, max].min
+        value.clamp(min, max)
       end
 
       def select_instruction_style(seed)
@@ -836,7 +841,7 @@ module Desiru
           end
 
           total_weight = weights.sum
-          return { mean: 0.0, std: 1.0 } if total_weight == 0
+          return { mean: 0.0, std: 1.0 } if total_weight.zero?
 
           # Normalize weights
           weights = weights.map { |w| w / total_weight }
@@ -859,23 +864,19 @@ module Desiru
 
         private
 
-        def kernel_function(x1, x2)
-          case @kernel
-          when :rbf
-            rbf_kernel(x1, x2)
-          else
-            rbf_kernel(x1, x2)
-          end
+        def kernel_function(features1, features2)
+          # Only RBF kernel supported for now
+          rbf_kernel(features1, features2)
         end
 
-        def rbf_kernel(x1, x2)
+        def rbf_kernel(features1, features2)
           # Radial Basis Function kernel
-          distance = euclidean_distance(x1, x2)
+          distance = euclidean_distance(features1, features2)
           Math.exp(-0.5 * ((distance / @length_scale)**2))
         end
 
-        def euclidean_distance(x1, x2)
-          Math.sqrt(x1.zip(x2).map { |a, b| (a - b)**2 }.sum)
+        def euclidean_distance(features1, features2)
+          Math.sqrt(features1.zip(features2).map { |a, b| (a - b)**2 }.sum)
         end
       end
     end

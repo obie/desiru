@@ -24,7 +24,6 @@ RSpec.describe 'ProgramOfThought Module Integration' do
       def solve(**inputs)
         numbers = inputs[:numbers]
         operation = inputs[:operation]
-        
         case operation
         when 'sum'
           { result: numbers.sum }

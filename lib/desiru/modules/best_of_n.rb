@@ -91,9 +91,6 @@ module Desiru
             # Remove the sample index from results
             sample.delete(:_sample_index)
             samples << sample
-          rescue StandardError => e
-            # If generation fails for a sample, re-raise in generate phase
-            raise e
           ensure
             # Restore original temperature
             model.temperature = original_temp if model.respond_to?(:temperature=) && original_temp
@@ -244,7 +241,7 @@ module Desiru
       end
 
       def select_by_custom(samples)
-        unless @custom_selector && @custom_selector.respond_to?(:call)
+        unless @custom_selector.respond_to?(:call)
           raise ArgumentError, "Custom selector must be provided when using :custom criterion"
         end
 

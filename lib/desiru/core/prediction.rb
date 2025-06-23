@@ -26,12 +26,10 @@ module Desiru
           @completions[key]
         elsif @example
           # First check the raw data in the example
-          if @example[key]
-            @example[key]
-          else
+          @example[key] ||
             # Then check the inputs and labels
-            @example.inputs[key] || @example.labels[key]
-          end
+            @example.inputs[key] ||
+            @example.labels[key]
         end
       end
 
@@ -52,7 +50,7 @@ module Desiru
       end
 
       def to_h
-        result = @example&.to_h || {}
+        result = @example ? @example.to_h : {}
         result.merge(@completions)
       end
 
@@ -74,7 +72,7 @@ module Desiru
           self[key] = args.first
         elsif @completions.key?(method_name)
           @completions[method_name]
-        elsif @example&.respond_to?(method_name)
+        elsif @example.respond_to?(method_name)
           @example.send(method_name, *args, &)
         else
           super
@@ -84,7 +82,7 @@ module Desiru
       def respond_to_missing?(method_name, include_private = false)
         method_name.to_s.end_with?('=') ||
           @completions.key?(method_name) ||
-          @example&.respond_to?(method_name) ||
+          @example.respond_to?(method_name) ||
           super
       end
 
@@ -97,7 +95,8 @@ module Desiru
       end
 
       def inspect
-        "#<#{self.class.name} completions=#{@completions.inspect} example=#{@example.inspect} metadata=#{@metadata.inspect}>"
+        "#<#{self.class.name} completions=#{@completions.inspect} " \
+          "example=#{@example.inspect} metadata=#{@metadata.inspect}>"
       end
 
       # Class method to create a Prediction from an Example

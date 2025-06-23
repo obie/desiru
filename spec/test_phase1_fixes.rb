@@ -10,31 +10,31 @@ $LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '..', 'lib'))
 
 require 'desiru'
 
-RSpec.describe "Phase 1 Integration Test Fixes" do
-  # Create a simple mock model class for testing
-  class SimpleMockModel
-    def initialize(responses = {})
-      @responses = responses
-      @call_count = 0
-    end
-
-    def complete(prompt, **options)
-      @call_count += 1
-      if @responses.is_a?(Proc)
-        @responses.call(prompt, options)
-      elsif @responses.is_a?(Hash) && prompt.is_a?(Hash)
-        # Look for specific patterns in the prompt
-        user_content = prompt[:user] || ""
-        response = @responses.find { |pattern, _| user_content.include?(pattern) }&.[](1)
-        response || { content: "answer: default response" }
-      else
-        @responses.is_a?(Hash) ? @responses[:default] || { content: "answer: default" } : @responses
-      end
-    end
-
-    attr_reader :call_count
+# Create a simple mock model class for testing
+class SimpleMockModel
+  def initialize(responses = {})
+    @responses = responses
+    @call_count = 0
   end
 
+  def complete(prompt, **options)
+    @call_count += 1
+    if @responses.is_a?(Proc)
+      @responses.call(prompt, options)
+    elsif @responses.is_a?(Hash) && prompt.is_a?(Hash)
+      # Look for specific patterns in the prompt
+      user_content = prompt[:user] || ""
+      response = @responses.find { |pattern, _| user_content.include?(pattern) }&.[](1)
+      response || { content: "answer: default response" }
+    else
+      @responses.is_a?(Hash) ? @responses[:default] || { content: "answer: default" } : @responses
+    end
+  end
+
+  attr_reader :call_count
+end
+
+RSpec.describe "Phase 1 Integration Test Fixes" do
   describe "Trace Collection Test Fix" do
     it "handles mock model interface correctly" do
       mock_model = SimpleMockModel.new({ content: "answer: Paris" })

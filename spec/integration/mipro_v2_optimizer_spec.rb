@@ -517,7 +517,7 @@ RSpec.describe 'MIPROv2 Optimizer Integration' do
       expect(frontier.size).to be >= 1
 
       # The solution with 0.9, 0.9 should be in the frontier
-      best_solution = frontier.find { |c| c[:scores][:exact_match] == 0.9 }
+      best_solution = frontier.find { |c| (c[:scores][:exact_match] - 0.9).abs < 0.001 }
       expect(best_solution).not_to be_nil
     end
   end

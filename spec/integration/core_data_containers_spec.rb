@@ -173,7 +173,7 @@ RSpec.describe 'Core Data Containers Integration' do
   describe 'Performance characteristics' do
     it 'handles large datasets efficiently' do
       large_data = {}
-      1000.times { |i| large_data[:"field_#{i}"] = "value_#{i}" }
+      1000.times { |i| large_data["field_#{i}"] = "value_#{i}" }
 
       start_time = Time.now
       example = Desiru::Core::Example.new(**large_data)
@@ -183,7 +183,7 @@ RSpec.describe 'Core Data Containers Integration' do
 
       expect(end_time - start_time).to be < 1.0
       expect(converted.keys.size).to eq(1000)
-      expect(converted[:field_999]).to eq("value_999")
+      expect(converted["field_999"]).to eq("value_999")
     end
 
     it 'maintains reasonable memory usage for complex objects' do

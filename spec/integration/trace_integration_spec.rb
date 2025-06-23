@@ -145,7 +145,7 @@ RSpec.describe "Trace Collection Integration" do
     end
 
     it "filters traces by success/failure" do
-      successful_traces = collector.filter_by_success(true)
+      successful_traces = collector.filter_by_success(success: true)
       expect(successful_traces).not_to be_empty
       expect(successful_traces.all? { |t| t.error.nil? }).to be true
     end

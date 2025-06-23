@@ -187,7 +187,7 @@ module Desiru
         metrics[:optimized_modules_count] = optimized_program.modules.size if optimized_program.respond_to?(:modules)
 
         # Add success rate if traces available
-        if @trace_collector.size > 0
+        if @trace_collector.size.positive?
           success_rate = @trace_collector.successful.size.to_f / @trace_collector.size
           metrics[:success_rate] = success_rate
           metrics[:optimization_score] = success_rate

@@ -16,7 +16,7 @@ RSpec.describe Desiru::Modules::BestOfN do
     end
 
     it 'accepts custom configuration' do
-      custom_selector = ->(samples) { samples.first }
+      custom_selector = lambda(&:first)
       custom_module = described_class.new(
         signature,
         model: model,

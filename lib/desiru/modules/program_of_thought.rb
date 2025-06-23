@@ -21,7 +21,8 @@ module Desiru
         signature ||= DEFAULT_SIGNATURE
 
         # If signature is a double/mock (for testing), store it directly
-        if signature.respond_to?(:output_fields) && signature.respond_to?(:input_fields) && !signature.is_a?(Signature) && !signature.is_a?(String)
+        if signature.respond_to?(:output_fields) && signature.respond_to?(:input_fields) &&
+           !signature.is_a?(Signature) && !signature.is_a?(String)
           @signature = signature
           @model = model || Desiru.configuration.default_model
           @config = default_config.merge(kwargs[:config] || {})
@@ -41,7 +42,8 @@ module Desiru
 
         if defined?(Desiru::TraceContext) && Desiru::TraceContext.respond_to?(:current) && Desiru::TraceContext.current
           Desiru::TraceContext.add_metadata(trace_metadata)
-        elsif defined?(Desiru::Core) && Desiru::Core.respond_to?(:trace_context) && Desiru::Core.trace_context.respond_to?(:current) && Desiru::Core.trace_context.current
+        elsif defined?(Desiru::Core) && Desiru::Core.respond_to?(:trace_context) &&
+              Desiru::Core.trace_context.respond_to?(:current) && Desiru::Core.trace_context.current
           Desiru::Core.trace_context.add_metadata(trace_metadata)
         end
 

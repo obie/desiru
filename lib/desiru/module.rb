@@ -222,9 +222,7 @@ module Desiru
       @data.key?(key.to_sym) || @data.key?(key.to_s)
     end
 
-    def has_key?(key)
-      key?(key)
-    end
+    alias has_key? key?
 
     def method_missing(method_name, *args, &)
       method_str = method_name.to_s

@@ -55,7 +55,7 @@ RSpec.describe 'Trace Collection System Integration' do
     end
 
     it 'handles multiple filters correctly' do
-      collector.add_filter { |trace| trace.success? }
+      collector.add_filter(&:success?)
       collector.add_filter { |trace| trace.module_name.start_with?('Test') }
 
       success_trace = Desiru::Core::Trace.new(

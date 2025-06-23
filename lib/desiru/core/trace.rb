@@ -110,8 +110,8 @@ module Desiru
         @traces.empty?
       end
 
-      def recent(n = 10)
-        @traces.last(n)
+      def recent(count = 10)
+        @traces.last(count)
       end
 
       def by_module(module_name)
@@ -138,7 +138,7 @@ module Desiru
         @traces.select { |trace| trace.module_name == module_name }
       end
 
-      def filter_by_success(success = true)
+      def filter_by_success(success: true)
         if success
           @traces.select(&:success?)
         else
@@ -147,7 +147,7 @@ module Desiru
       end
 
       def filter_by_time_range(start_time, end_time)
-        @traces.select { |trace| trace.timestamp >= start_time && trace.timestamp <= end_time }
+        @traces.select { |trace| trace.timestamp.between?(start_time, end_time) }
       end
 
       def statistics
@@ -171,7 +171,7 @@ module Desiru
 
         {
           total_traces: total,
-          success_rate: total > 0 ? successful.to_f / total : 0,
+          success_rate: total.positive? ? successful.to_f / total : 0,
           average_duration_ms: avg_duration,
           by_module: by_module
         }
