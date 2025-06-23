@@ -171,8 +171,9 @@ RSpec.describe Desiru::Core::Example do
       )
 
       expect(example.inspect).to include('Desiru::Core::Example')
-      expect(example.inspect).to include('inputs={question: "Q", context: "C"}')
-      expect(example.inspect).to include('labels={answer: "A"}')
+      # Check for both Ruby hash inspect formats (symbol: and :symbol =>)
+      expect(example.inspect).to match(/inputs=\{.+question.+"Q".+context.+"C".+\}/)
+      expect(example.inspect).to match(/labels=\{.+answer.+"A".+\}/)
     end
   end
 end

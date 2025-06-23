@@ -230,7 +230,8 @@ RSpec.describe Desiru::Core::Prediction do
       prediction = described_class.new(example, answer: '4', metadata: { confidence: 0.9 })
 
       expect(prediction.inspect).to include('Desiru::Core::Prediction')
-      expect(prediction.inspect).to include('completions={answer: "4"}')
+      # Check for both Ruby hash inspect formats (symbol: and :symbol =>)
+      expect(prediction.inspect).to match(/completions=\{.+answer.+"4".+\}/)
       expect(prediction.inspect).to include('example=#<Desiru::Core::Example')
       expect(prediction.inspect).to include('metadata={confidence: 0.9}')
     end
