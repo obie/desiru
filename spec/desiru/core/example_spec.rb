@@ -175,7 +175,7 @@ RSpec.describe Desiru::Core::Example do
       expect(example.inspect).to include('Desiru::Core::Example')
       expect(example.inspect).to include('inputs=')
       expect(example.inspect).to include('labels=')
-      
+
       # Verify the content is present regardless of hash format
       inspect_str = example.inspect
       expect(inspect_str).to include('"Q"')
