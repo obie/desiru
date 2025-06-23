@@ -4,6 +4,13 @@ module Desiru
   module Modules
     # Basic prediction module - the fundamental building block
     class Predict < Module
+      DEFAULT_SIGNATURE = 'question: string -> answer: string'
+
+      def initialize(signature = nil, model: nil, **)
+        signature ||= DEFAULT_SIGNATURE
+        super
+      end
+
       def forward(inputs)
         prompt = build_prompt(inputs)
 

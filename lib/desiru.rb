@@ -30,6 +30,7 @@ end
 require_relative 'desiru/version'
 require_relative 'desiru/errors'
 require_relative 'desiru/configuration'
+require_relative 'desiru/core'
 require_relative 'desiru/field'
 require_relative 'desiru/signature'
 require_relative 'desiru/assertions'
@@ -51,6 +52,7 @@ require_relative 'desiru/modules/retrieve'
 require_relative 'desiru/modules/react'
 require_relative 'desiru/modules/program_of_thought'
 require_relative 'desiru/modules/multi_chain_comparison'
+require_relative 'desiru/modules/best_of_n'
 require_relative 'desiru/modules/majority'
 
 # Optimizers
@@ -58,6 +60,7 @@ require_relative 'desiru/optimizers/base'
 require_relative 'desiru/optimizers/bootstrap_few_shot'
 require_relative 'desiru/optimizers/knn_few_shot'
 require_relative 'desiru/optimizers/copro'
+require_relative 'desiru/optimizers/mipro_v2'
 
 # Background jobs
 require_relative 'desiru/async_capable'
@@ -79,4 +82,11 @@ begin
   require_relative 'desiru/graphql/schema_generator'
 rescue LoadError
   # GraphQL integration is optional
+end
+
+# Include Traceable in Module class after everything is loaded
+module Desiru
+  class Module
+    include Core::Traceable
+  end
 end

@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2025-06-23
+
+### Added
+- **Core Data Containers**: New `Example` and `Prediction` classes for structured data handling in DSPy programs
+- **Trace Collection System**: Complete tracing infrastructure with `TraceCollector` and `Traceable` for execution monitoring and debugging
+- **Compilation Infrastructure**: New `Compiler` and `CompilerBuilder` classes enabling full DSPy program compilation pipeline
+- **ProgramOfThought Module**: Advanced reasoning module that generates and executes code for complex problem solving
+- **MIPROv2 Optimizer**: State-of-the-art Bayesian optimization algorithm for automatic prompt and few-shot example optimization
+- **BestOfN Module**: Multi-sampling module with configurable selection criteria (confidence, consistency, LLM judge, custom)
+- **Comprehensive Integration Tests**: Full test coverage for all new components ensuring reliability and correctness
+
+### Enhanced
+- **Module Architecture**: Improved base module system to support advanced tracing and compilation features
+- **Optimization Pipeline**: Complete optimization workflow from data collection through model improvement
+- **Error Handling**: Robust error recovery and logging throughout the new components
+
+### Technical Improvements
+- **Type Safety**: Enhanced type checking and validation across all new modules
+- **Performance**: Optimized execution paths for compilation and optimization workflows  
+- **Extensibility**: Modular architecture enabling easy addition of new optimizers and reasoning modules
+
 ## [0.1.1] - 2025-06-21
 
 ### Added
@@ -47,5 +68,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Comprehensive test suite
 - Documentation and examples
 
+[0.2.0]: https://github.com/obie/desiru/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/obie/desiru/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/obie/desiru/releases/tag/v0.1.0
