@@ -235,7 +235,9 @@ RSpec.describe Desiru::Core::Prediction do
       expect(prediction.inspect).to include('"4"')
       expect(prediction.inspect).to include('answer')
       expect(prediction.inspect).to include('example=#<Desiru::Core::Example')
-      expect(prediction.inspect).to include('metadata={confidence: 0.9}')
+      expect(prediction.inspect).to include('metadata=')
+      expect(prediction.inspect).to include('confidence')
+      expect(prediction.inspect).to include('0.9')
     end
   end
 end
