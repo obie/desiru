@@ -33,7 +33,7 @@ Gem::Specification.new do |spec|
   # Runtime dependencies
   spec.add_dependency 'forwardable', '~> 1.3'
   spec.add_dependency 'redis', '~> 5.0'
-  spec.add_dependency 'sidekiq', '~> 7.2'
+  spec.add_dependency 'sidekiq', '>= 7.2', '< 9.0'
   spec.add_dependency 'singleton', '~> 0.1'
 
   # Development dependencies moved to Gemfile
