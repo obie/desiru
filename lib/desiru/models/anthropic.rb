@@ -6,20 +6,59 @@ module Desiru
   module Models
     # Anthropic Claude model adapter
     class Anthropic < Base
-      DEFAULT_MODEL = 'claude-3-haiku-20240307'
+      DEFAULT_MODEL = 'claude-3-5-haiku-latest'
 
       def initialize(config = {})
         super
         @api_key = config[:api_key] || ENV.fetch('ANTHROPIC_API_KEY', nil)
         raise ArgumentError, 'Anthropic API key is required' unless @api_key
 
-        @client = ::Anthropic::Client.new(access_token: @api_key)
+        @client = ::Anthropic::Client.new(api_key: @api_key)
       end
 
       def models
         # Anthropic doesn't provide a models endpoint, so we maintain a list
         # This list should be updated periodically as new models are released
         @models ||= {
+          # Claude 4 models
+          'claude-opus-4-20250514' => {
+            name: 'Claude Opus 4',
+            max_tokens: 200_000,
+            description: 'Most advanced Claude model for complex reasoning'
+          },
+          'claude-sonnet-4-20250514' => {
+            name: 'Claude Sonnet 4',
+            max_tokens: 200_000,
+            description: 'Latest Sonnet with enhanced capabilities'
+          },
+          # Claude 3.7 models
+          'claude-3-7-sonnet-20250219' => {
+            name: 'Claude Sonnet 3.7',
+            max_tokens: 200_000,
+            description: 'Advanced Sonnet with improved performance'
+          },
+          'claude-3-7-sonnet-latest' => {
+            name: 'Claude Sonnet 3.7 (Latest)',
+            max_tokens: 200_000,
+            description: 'Latest Claude Sonnet 3.7 model'
+          },
+          # Claude 3.5 models
+          'claude-3-5-haiku-20241022' => {
+            name: 'Claude 3.5 Haiku',
+            max_tokens: 200_000,
+            description: 'Latest Haiku with enhanced speed'
+          },
+          'claude-3-5-haiku-latest' => {
+            name: 'Claude 3.5 Haiku (Latest)',
+            max_tokens: 200_000,
+            description: 'Latest Claude 3.5 Haiku model'
+          },
+          'claude-3-5-sonnet-20241022' => {
+            name: 'Claude 3.5 Sonnet',
+            max_tokens: 200_000,
+            description: 'Sonnet with improved capabilities'
+          },
+          # Legacy Claude 3 models
           'claude-3-haiku-20240307' => {
             name: 'Claude 3 Haiku',
             max_tokens: 200_000,
@@ -33,17 +72,7 @@ module Desiru
           'claude-3-opus-20240229' => {
             name: 'Claude 3 Opus',
             max_tokens: 200_000,
-            description: 'Most capable model for complex tasks'
-          },
-          'claude-3-5-sonnet-20241022' => {
-            name: 'Claude 3.5 Sonnet',
-            max_tokens: 200_000,
-            description: 'Latest Sonnet with improved capabilities'
-          },
-          'claude-3-5-haiku-20241022' => {
-            name: 'Claude 3.5 Haiku',
-            max_tokens: 200_000,
-            description: 'Latest Haiku with enhanced speed'
+            description: 'Most capable Claude 3 model for complex tasks'
           }
         }
       end
@@ -76,10 +105,8 @@ module Desiru
         end
 
         # Make API call
-        response = @client.messages(parameters: params)
-
-        # Format response
-        format_response(response, model)
+        message = @client.messages.create(**params)
+        format_response(message, model)
       rescue ::Faraday::Error => e
         handle_api_error(e)
       end
@@ -114,17 +141,15 @@ module Desiru
         end
       end
 
-      def format_response(response, model)
-        content = extract_content(response)
-
+      def format_response(message, model)
         {
-          content: content,
-          raw: response,
+          content: extract_content(message),
+          raw: message,
           model: model,
           usage: {
-            prompt_tokens: response.dig('usage', 'input_tokens') || 0,
-            completion_tokens: response.dig('usage', 'output_tokens') || 0,
-            total_tokens: (response.dig('usage', 'input_tokens') || 0) + (response.dig('usage', 'output_tokens') || 0)
+            prompt_tokens: message.usage.input_tokens || 0,
+            completion_tokens: message.usage.output_tokens || 0,
+            total_tokens: (message.usage.input_tokens || 0) + (message.usage.output_tokens || 0)
           }
         }
       end
