@@ -25,7 +25,7 @@ group :development, :test do
 end
 
 # LLM interaction dependencies
-gem 'anthropic', '~> 0.3'
+gem 'anthropic', '~> 1.1'
 gem 'faraday', '~> 2.0'
 gem 'faraday-retry', '~> 2.0'
 gem 'open_router', '~> 0.3'

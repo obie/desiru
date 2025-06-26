@@ -25,10 +25,8 @@ GEM
       uri (>= 0.13.1)
     addressable (2.8.7)
       public_suffix (>= 2.0.2, < 7.0)
-    anthropic (0.4.1)
-      event_stream_parser (>= 0.3.0, < 2.0.0)
-      faraday (>= 1)
-      faraday-multipart (>= 1)
+    anthropic (1.1.1)
+      connection_pool
     ast (2.4.3)
     async (2.25.0)
       console (~> 1.29)
@@ -289,7 +287,7 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
-  anthropic (~> 0.3)
+  anthropic (~> 1.1)
   async (~> 2.0)
   desiru!
   dotenv (~> 3.0)
