@@ -13,7 +13,10 @@ module Desiru
         @api_key = config[:api_key] || ENV.fetch('OPENAI_API_KEY', nil)
         raise ArgumentError, 'OpenAI API key is required' unless @api_key
 
-        @client = ::OpenAI::Client.new(access_token: @api_key)
+        client_params = { access_token: @api_key }
+        client_params[:uri_base] = config[:uri_base] if config[:uri_base]
+        
+        @client = ::OpenAI::Client.new(**client_params)
         @models_cache = nil
         @models_fetched_at = nil
       end
@@ -87,12 +90,15 @@ module Desiru
       private
 
       def fetch_models
+        puts(@client.uri_base)
         response = @client.models.list
 
         @models_cache = {}
         response['data'].each do |model|
           # Filter for chat models only
-          next unless model['id'].include?('gpt') || model['id'].include?('o1')
+          if @client.uri_base == 'https://api.openai.com/'
+            next unless model['id'].include?('gpt') || model['id'].include?('o1')
+          end
 
           @models_cache[model['id']] = {
             name: model['id'],
