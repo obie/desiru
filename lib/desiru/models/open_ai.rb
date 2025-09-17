@@ -90,12 +90,11 @@ module Desiru
       private
 
       def fetch_models
-        puts(@client.uri_base)
         response = @client.models.list
 
         @models_cache = {}
         response['data'].each do |model|
-          # Filter for chat models only
+          # Filter for chat models only, if using official OpenAI endpoint
           if @client.uri_base == 'https://api.openai.com/'
             next unless model['id'].include?('gpt') || model['id'].include?('o1')
           end
