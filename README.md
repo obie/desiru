@@ -2,7 +2,7 @@
 
 A Ruby implementation of [DSPy](https://dspy.ai/), the framework for programming—not prompting—language models. Build sophisticated AI systems with modular, composable code instead of brittle prompt strings.
 
-Note: This project is in active development. While core functionality is stable, expect continued rapid evolution and new features.
+**Note: This project was an experiment that will not be developed further. For an active implementation of the same concept see [DSPY.rb](https://oss.vicente.services/dspy.rb/)**
 
 
 ## Overview
