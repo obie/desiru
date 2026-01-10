@@ -76,6 +76,17 @@ module Desiru
     alias inputs input_fields
     alias outputs output_fields
 
+    def self.wrap(signature_string_or_instance)
+      case signature_string_or_instance
+      when Signature
+        signature_string_or_instance
+      when String
+        Signature.new(signature_string_or_instance)
+      else
+        raise ModuleError, 'Signature must be a String or Signature instance'
+      end
+    end
+
     def initialize(signature_string, descriptions: {})
       @raw_signature = signature_string
       @descriptions = descriptions

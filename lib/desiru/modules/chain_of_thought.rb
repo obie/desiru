@@ -4,11 +4,13 @@ module Desiru
   module Modules
     # Chain of Thought module - adds reasoning steps before producing outputs
     class ChainOfThought < Predict
+      attr_reader :original_signature
+
       def initialize(signature, **)
         # Extend signature to include reasoning field
         extended_sig = extend_signature_with_reasoning(signature)
         super(extended_sig, **)
-        @original_signature = signature
+        @original_signature = Signature.wrap(signature)
       end
 
       protected

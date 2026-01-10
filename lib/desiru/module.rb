@@ -15,15 +15,7 @@ module Desiru
     attr_reader :signature, :model, :config, :demos, :metadata
 
     def initialize(signature, model: nil, config: {}, demos: [], metadata: {})
-      @signature = case signature
-                   when Signature
-                     signature
-                   when String
-                     Signature.new(signature)
-                   else
-                     raise ModuleError, 'Signature must be a String or Signature instance'
-                   end
-
+      @signature = Signature.wrap(signature)
       @model = model || Desiru.configuration.default_model
       @config = default_config.merge(config)
       @demos = demos
